@@ -1,0 +1,5 @@
+export const APP_CONSTANTS = {
+  DEFAULT_CONVERSATION_TITLE: 'Financial Consultation',
+  MAX_HISTORY_CONTEXT_MESSAGES: 20,
+  APP_VERSION: '0.2.0',
+};
