@@ -70,7 +70,20 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 6. Watchlist
+    // 6. SEC Filings: 10-K, 10-Q, 8-K, sec filing, edgar, accession number
+    if (
+      /\b(sec|edgar|10-k|10k|10-q|10q|8-k|8k|filing|filings|accession number|accession)\b/i.test(
+        text,
+      )
+    ) {
+      return {
+        category: IntentCategory.SEC_FILINGS,
+        confidence: 0.95,
+        reasoning: 'Matched SEC EDGAR filing keywords',
+      };
+    }
+
+    // 7. Watchlist
     if (/\b(watchlist|track list|monitored stocks)\b/i.test(text)) {
       return {
         category: IntentCategory.WATCHLIST,
@@ -79,7 +92,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 7. Alert
+    // 8. Alert
     if (/\b(alert|notify|trigger|price target)\b/i.test(text)) {
       return {
         category: IntentCategory.ALERT,
@@ -88,8 +101,8 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 8. Document
-    if (/\b(document|pdf|file|transcript|prospectus|10-k|10-q)\b/i.test(text)) {
+    // 9. Document
+    if (/\b(document|pdf|file|transcript|prospectus)\b/i.test(text)) {
       return {
         category: IntentCategory.DOCUMENT_QUERY,
         confidence: 0.85,
@@ -97,7 +110,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 9. Macro / Market info
+    // 10. Macro / Market info
     if (
       /\b(s&p|nasdaq|dow|fed|inflation|interest rates|treasury|yield curve|macro)\b/i.test(text)
     ) {
@@ -108,7 +121,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 10. Company Research: Tell me about Microsoft / company profile / overview / research
+    // 11. Company Research: Tell me about Microsoft / company profile / overview / research
     if (
       /\b(tell me about|about|profile|overview|company info|information on|research|details on)\b/i.test(
         text,

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AgentRegistryService } from './agents/agent-registry.service';
+import { MarketAgent } from './agents/market-agent';
+import { ResearchAgent } from './agents/research-agent';
 import { ContextBuilderService } from './context/context-builder.service';
 import { CONTEXT_BUILDER_TOKEN } from './context/interfaces/context-builder.interface';
 import { ClarificationService } from './conversation/clarification.service';
@@ -25,6 +27,8 @@ import { MemoryModule } from '@/memory/memory.module';
     ClarificationService,
     AgentRegistryService,
     ConversationAgentService,
+    ResearchAgent,
+    MarketAgent,
     ExecutionPipelineService,
     AIOrchestratorService,
     RuleBasedIntentClassifier,
@@ -47,6 +51,8 @@ import { MemoryModule } from '@/memory/memory.module';
     ContextBuilderService,
     CONTEXT_BUILDER_TOKEN,
     ConversationAgentService,
+    ResearchAgent,
+    MarketAgent,
     AgentRegistryService,
     AIOrchestratorService,
     ExecutionPipelineService,

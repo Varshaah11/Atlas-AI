@@ -8,6 +8,11 @@ import {
   FinancialMetrics,
 } from './interfaces/finance-provider.interface';
 import { FinancialContext } from './interfaces/financial-context.interface';
+import {
+  ISecEdgarProvider,
+  SEC_EDGAR_PROVIDER_TOKEN,
+  SecCompanyFilings,
+} from './interfaces/sec-edgar.interface';
 import { AppLogger } from '@/common/logger/logger.service';
 
 const COMMON_DICTIONARY: Record<string, string> = {
@@ -33,6 +38,7 @@ export class FinanceService {
 
   constructor(
     @Inject(FINANCE_PROVIDER_TOKEN) private readonly financeProvider: IFinanceProvider,
+    @Inject(SEC_EDGAR_PROVIDER_TOKEN) private readonly secEdgarProvider: ISecEdgarProvider,
     private readonly logger: AppLogger,
   ) {}
 
@@ -178,6 +184,23 @@ export class FinanceService {
     return metrics;
   }
 
+  async getRecentSecFilings(
+    symbolOrCompany: string,
+    forms: string[] = ['10-K', '10-Q', '8-K'],
+  ): Promise<SecCompanyFilings> {
+    const uppercaseSymbol = symbolOrCompany.trim().toUpperCase();
+    const cacheKey = `sec:${uppercaseSymbol}:${forms.join('-')}`;
+
+    const cached = this.getCached<SecCompanyFilings>(cacheKey);
+    if (cached) return cached;
+
+    const filings = await this.secEdgarProvider.getRecentFilings(symbolOrCompany, forms);
+    if (filings && filings.recentFilings && filings.recentFilings.length > 0) {
+      this.setCached(cacheKey, filings, 10 * 60 * 1000); // 10m TTL
+    }
+    return filings;
+  }
+
   async getFinancialContext(
     symbolOrCompany: string,
     options: {
@@ -185,6 +208,7 @@ export class FinanceService {
       includeProfile?: boolean;
       includeNews?: boolean;
       includeMetrics?: boolean;
+      includeSecFilings?: boolean;
     } = { includeQuote: true, includeProfile: true },
   ): Promise<FinancialContext> {
     const retrievedAt = new Date().toISOString();
@@ -205,6 +229,7 @@ export class FinanceService {
     let profile: CompanyProfile | undefined;
     let news: CompanyNewsItem[] | undefined;
     let metrics: FinancialMetrics | undefined;
+    let secFilings: SecCompanyFilings | undefined;
 
     if (options.includeQuote) {
       promises.push(
@@ -238,9 +263,22 @@ export class FinanceService {
       );
     }
 
+    if (options.includeSecFilings) {
+      promises.push(
+        this.getRecentSecFilings(resolvedSymbol).then((res) => {
+          if (res) secFilings = res;
+        }),
+      );
+    }
+
     await Promise.all(promises);
 
-    const hasData = quote || profile || (news && news.length > 0) || metrics;
+    const hasData =
+      quote ||
+      profile ||
+      (news && news.length > 0) ||
+      metrics ||
+      (secFilings && secFilings.recentFilings && secFilings.recentFilings.length > 0);
 
     if (!hasData) {
       return {
@@ -258,12 +296,18 @@ export class FinanceService {
       profile,
       news,
       metrics,
+      secFilings,
       retrievedAt,
-      source: 'finnhub',
+      source: options.includeSecFilings ? 'finnhub+sec_edgar' : 'finnhub',
     };
   }
 
   async isHealthy(): Promise<boolean> {
-    return this.financeProvider.isHealthy();
+    const finnhubOk = await this.financeProvider.isHealthy();
+    return finnhubOk;
+  }
+
+  async isSecHealthy(): Promise<boolean> {
+    return this.secEdgarProvider.isHealthy();
   }
 }

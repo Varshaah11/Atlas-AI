@@ -38,8 +38,11 @@ export class EntityExtractorService {
             'IN',
             'IS',
             'IT',
+            'K',
             'ON',
             'OR',
+            'Q',
+            'S',
             'US',
             'THE',
             'AND',
@@ -49,6 +52,11 @@ export class EntityExtractorService {
             'TELL',
             'SHOW',
             'ME',
+            'MOST',
+            'RECENT',
+            'FILING',
+            'DATE',
+            'SEC',
           ].includes(symbol)
         ) {
           tickers.add(symbol);

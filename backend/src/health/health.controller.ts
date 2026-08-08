@@ -19,6 +19,7 @@ export interface HealthCheckData {
   telegram: 'connected' | 'disconnected';
   groq: 'connected' | 'disconnected';
   finnhub: 'connected' | 'disconnected';
+  secEdgar: 'connected' | 'disconnected';
   stats: SystemStats;
   uptimeSeconds: number;
 }
@@ -40,6 +41,7 @@ export class HealthController {
     const isTelegramHealthy = this.telegramService.isHealthy();
     const isGroqHealthy = await this.llmProvider.isHealthy();
     const isFinnhubHealthy = await this.financeService.isHealthy();
+    const isSecHealthy = await this.financeService.isSecHealthy();
 
     const uptimeSeconds = Math.floor((Date.now() - this.startTime) / 1000);
 
@@ -67,6 +69,7 @@ export class HealthController {
       telegram: isTelegramHealthy ? 'connected' : 'disconnected',
       groq: isGroqHealthy ? 'connected' : 'disconnected',
       finnhub: isFinnhubHealthy ? 'connected' : 'disconnected',
+      secEdgar: isSecHealthy ? 'connected' : 'disconnected',
       stats: {
         totalUsers,
         totalConversations,
