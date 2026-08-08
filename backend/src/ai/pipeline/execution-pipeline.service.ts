@@ -11,6 +11,7 @@ import { GENERAL_CHAT_SYSTEM_PROMPT } from '../prompts';
 import { AppLogger } from '@/common/logger/logger.service';
 import { FinanceService } from '@/finance/finance.service';
 import { FinancialContext } from '@/finance/interfaces/financial-context.interface';
+import { MemoryService } from '@/memory/memory.service';
 
 export interface FinancialDataResult {
   isError: boolean;
@@ -24,6 +25,7 @@ export class ExecutionPipelineService {
     @Inject(CONTEXT_BUILDER_TOKEN) private readonly contextBuilder: IContextBuilderService,
     @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: ILLMProvider,
     private readonly financeService: FinanceService,
+    private readonly memoryService: MemoryService,
     private readonly logger: AppLogger,
   ) {}
 
@@ -35,6 +37,15 @@ export class ExecutionPipelineService {
       `ExecutionPipeline executing task ${task.id} [Intent: ${task.intent}] for User ${userId} in Conversation ${conversationId}`,
       'ExecutionPipelineService',
     );
+
+    // Retrieve user preferences and long-term memories prior to inference
+    const memoryPrompt = await this.memoryService.buildMemoryPromptContext(userId);
+    if (memoryPrompt) {
+      this.logger.log(
+        `Retrieved long-term user memory context for User ${userId}`,
+        'ExecutionPipelineService',
+      );
+    }
 
     // Check if task intent is a financial intent
     const isFinancialIntent = [
@@ -73,15 +84,22 @@ export class ExecutionPipelineService {
         };
       }
 
-      // Valid financial context retrieved: append to user prompt and pass to Groq
-      const fullUserPrompt = `${task.message}\n\n${finDataResult.promptContext}`;
+      // Valid financial context retrieved: append financial context & user memory to user prompt
+      let fullUserPrompt = `${task.message}\n\n${finDataResult.promptContext}`;
+      if (memoryPrompt) {
+        fullUserPrompt += `\n\n${memoryPrompt}`;
+      }
+
       const preparedContext = this.contextBuilder.buildContext(conversationHistory, fullUserPrompt);
 
       this.logger.log(
-        `[Pipeline] Valid financial context attached. Sending prompt to Groq...`,
+        `[Pipeline] Valid financial context and user memory attached. Sending prompt to Groq...`,
         'ExecutionPipelineService',
       );
       const llmResult = await this.llmProvider.generateResponse(preparedContext);
+
+      // Asynchronously trigger non-blocking user memory update
+      void this.extractAndUpdateMemoryAsync(userId, task.message, llmResult.text);
 
       const totalPipelineTimeMs = Date.now() - startTime;
       return {
@@ -102,12 +120,19 @@ export class ExecutionPipelineService {
         'ExecutionPipelineService',
       );
 
+      const fullUserPrompt = memoryPrompt
+        ? `${memoryPrompt}\n\n[CURRENT USER MESSAGE]\n${task.message}`
+        : task.message;
+
       const preparedContext = this.contextBuilder.buildContext(
         conversationHistory,
-        task.message,
+        fullUserPrompt,
         GENERAL_CHAT_SYSTEM_PROMPT,
       );
       const llmResult = await this.llmProvider.generateResponse(preparedContext);
+
+      // Asynchronously trigger non-blocking user memory update
+      void this.extractAndUpdateMemoryAsync(userId, task.message, llmResult.text);
 
       const totalPipelineTimeMs = Date.now() - startTime;
       return {
@@ -121,6 +146,86 @@ export class ExecutionPipelineService {
           intent: task.intent,
         },
       };
+    }
+  }
+
+  private async extractAndUpdateMemoryAsync(
+    userId: string,
+    userMessage: string,
+    assistantOutput: string,
+  ): Promise<void> {
+    try {
+      const textLower = userMessage.toLowerCase();
+
+      // Skip quick greetings, short messages, or simple commands
+      if (
+        userMessage.length < 12 ||
+        /^(hi|hello|hey|thanks|thank you|good morning|help)$/i.test(textLower.trim())
+      ) {
+        return;
+      }
+
+      // Preference signal check to avoid unnecessary LLM calls
+      const hasPreferenceSignals =
+        /\b(prefer|invest|portfolio|style|risk|tolerance|follow|like|stocks|sectors|ticker|conservative|aggressive|growth|moderate|tech|technology|healthcare)\b/i.test(
+          userMessage,
+        );
+
+      if (!hasPreferenceSignals) {
+        return;
+      }
+
+      const extractionPrompt = `Analyze the user's message and extract durable long-term preferences or facts about the user.
+Return ONLY a JSON object in this format (no markdown codeblocks, no extra text):
+{
+  "preferences": {
+    "investmentStyle": "conservative | growth | aggressive | null",
+    "riskTolerance": "low | moderate | high | null",
+    "preferredSectors": ["sector1"],
+    "preferredTickers": ["TICKER1"]
+  },
+  "memories": [
+    {
+      "memory": "Durable factual statement about the user",
+      "category": "PREFERENCE | INTEREST | GOAL | PROFILE | FINANCIAL_CONTEXT",
+      "importance": 0.8
+    }
+  ]
+}
+
+User Message: "${userMessage}"
+Assistant Response: "${assistantOutput}"`;
+
+      const extractionContext = this.contextBuilder.buildContext([], extractionPrompt);
+      const extractionResult = await this.llmProvider.generateResponse(extractionContext);
+
+      const cleanText = extractionResult.text
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .trim();
+      const parsed = JSON.parse(cleanText);
+
+      if (parsed.preferences) {
+        await this.memoryService.updateUserPreferences(userId, parsed.preferences);
+      }
+
+      if (Array.isArray(parsed.memories)) {
+        for (const mem of parsed.memories) {
+          if (mem.memory && typeof mem.memory === 'string') {
+            await this.memoryService.saveMemory(
+              userId,
+              mem.memory,
+              mem.category || 'PROFILE',
+              typeof mem.importance === 'number' ? mem.importance : 0.6,
+            );
+          }
+        }
+      }
+    } catch (error: any) {
+      this.logger.warn(
+        `Background memory extraction skipped or failed for User ${userId}: ${error.message}`,
+        'ExecutionPipelineService',
+      );
     }
   }
 

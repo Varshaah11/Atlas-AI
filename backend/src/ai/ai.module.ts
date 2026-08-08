@@ -13,9 +13,10 @@ import { AIOrchestratorService } from './orchestrator/orchestrator.service';
 import { ExecutionPipelineService } from './pipeline/execution-pipeline.service';
 import { AppLogger } from '@/common/logger/logger.service';
 import { FinanceModule } from '@/finance/finance.module';
+import { MemoryModule } from '@/memory/memory.module';
 
 @Module({
-  imports: [FinanceModule],
+  imports: [FinanceModule, MemoryModule],
   providers: [
     AppLogger,
     GroqService,

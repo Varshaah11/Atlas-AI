@@ -21,16 +21,47 @@ enum MessageRole {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  telegramId    String         @unique
+  id            String          @id @default(uuid())
+  telegramId    String          @unique
   username      String?
   firstName     String?
   lastName      String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   conversations Conversation[]
+  preference    UserPreference?
+  memories      UserMemory[]
 
   @@map("users")
+}
+
+model UserPreference {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investmentStyle  String?
+  riskTolerance    String?
+  preferredSectors String[]
+  preferredTickers String[]
+  preferredMarket  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+model UserMemory {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memory     String
+  category   String   @default("PROFILE")
+  importance Float    @default(0.5)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_memories")
 }
 
 model Conversation {

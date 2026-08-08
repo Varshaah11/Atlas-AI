@@ -7,6 +7,7 @@ import { validateEnv } from '@/config/env.config';
 import { DatabaseModule } from '@/database/database.module';
 import { FinanceModule } from '@/finance/finance.module';
 import { HealthModule } from '@/health/health.module';
+import { MemoryModule } from '@/memory/memory.module';
 import { SharedModule } from '@/shared/shared.module';
 import { TelegramModule } from '@/telegram/telegram.module';
 import { UsersModule } from '@/users/users.module';
@@ -20,6 +21,7 @@ import { UsersModule } from '@/users/users.module';
     SharedModule,
     DatabaseModule,
     UsersModule,
+    MemoryModule,
     FinanceModule,
     HealthModule,
     AIModule,
