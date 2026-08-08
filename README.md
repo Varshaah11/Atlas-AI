@@ -7,63 +7,25 @@ Atlas AI is an AI-powered Financial Assistant living inside Telegram, designed t
 - **Telegram Bot Interface**: Natural conversational interface powered by `Telegraf.js`.
 - **Conversation Gateway**: Input validation, text normalization, and graceful handling of empty or invalid messages.
 - **AI Orchestrator & Conversation Agent**: Multi-agent framework supporting intent classification (`IIntentClassifier`), entity extraction (`EntityExtractorService`), ambiguity clarification (`ClarificationService`), and capability-based agent discovery (`AgentRegistryService`).
-- **Execution Pipeline**: Decoupled execution pipeline (`ExecutionPipelineService`) managing context building and LLM inference.
+- **Financial Intelligence Layer (Sprint 4)**: Real-time financial context integration via **Finnhub REST API** for real stock quotes, company profiles, financial metrics, news, and stock comparisons.
+- **Strict Anti-Hallucination Guardrails**: Groq receives retrieved Finnhub data as the authoritative source of truth for financial figures. Values are never fabricated or estimated if unavailable.
+- **Lightweight TTL Caching**: Quota-friendly in-memory caching (60s Quotes, 10m Profiles/Metrics, 5m News) ensuring free-tier efficiency.
+- **Execution Pipeline**: Decoupled execution pipeline (`ExecutionPipelineService`) managing financial data retrieval, context building, and LLM inference.
 - **Groq LLM Engine**: Powered by Groq (`groq-sdk`) running `llama-3.3-70b-versatile` with latency tracking.
-- **Financial Intelligence Persona**: Isolated prompt registry (`ATLAS_SYSTEM_PROMPT`) delivering professional, factual, and non-advisory financial insights.
 - **Data Persistence**: Prisma ORM with PostgreSQL + `pgvector` for user profiles, active conversations, and message histories.
-- **Standardized API & Health Monitoring**: `GET /health` endpoint reporting database, Telegram, and Groq status plus system counters.
+- **Standardized API & Health Monitoring**: `GET /health` endpoint reporting database, Telegram, Groq, and Finnhub health status plus system counters.
 - **System Monitor Dashboard**: Next.js 14 web monitor UI displaying component health status badges and user/conversation stats.
 
 ---
 
-## 📁 Project Structure
+## 📈 Supported Financial Queries
 
-```
-Atlas-AI/
-├── .editorconfig              # Code formatting rules for IDEs
-├── .prettierrc                # Shared Prettier formatting configuration
-├── .prettierignore            # Ignore patterns for Prettier
-├── package.json               # Root monorepo workspace configuration
-├── README.md                  # Project introduction and quickstart guide
-├── ARCHITECTURE.md            # Master architectural specification
-├── backend/                   # NestJS Backend API & Telegram Service
-│   ├── .eslintrc.js           # Strict TypeScript ESLint configuration
-│   ├── nest-cli.json          # Nest CLI build configuration
-│   ├── tsconfig.json          # TypeScript path aliases (@/*)
-│   ├── prisma/
-│   │   └── schema.prisma      # PostgreSQL schema with pgvector support
-│   └── src/
-│       ├── main.ts            # Application bootstrap with global pipes & filters
-│       ├── app.module.ts      # Root NestJS application module
-│       ├── ai/                # AI engine, Groq client, orchestrator, agents, and prompts
-│       │   ├── agents/        # BaseAgent interface & capability-based AgentRegistryService
-│       │   ├── context/       # ContextBuilderService & LLM prompt formatting
-│       │   ├── conversation/  # ConversationAgent, IIntentClassifier, EntityExtractor, ClarificationEngine
-│       │   ├── interfaces/    # ILLMProvider & LLMExecutionResult contracts
-│       │   ├── orchestrator/  # AIOrchestratorService, ConversationTask, ExecutionContext
-│       │   ├── pipeline/      # ExecutionPipelineService for orchestrator execution plans
-│       │   ├── prompts/       # ATLAS_SYSTEM_PROMPT & prompt registry
-│       │   └── groq.service.ts # Groq LLM provider implementation using groq-sdk
-│       ├── chat/              # Chat orchestration, gateways, and services
-│       │   ├── gateways/      # Input validation & ConversationGateway
-│       │   ├── interfaces/    # Service contracts
-│       │   └── services/      # ChatService, ConversationService, MessageService
-│       ├── common/            # Shared loggers, filters, and exceptions
-│       ├── config/            # Environment variable validation & schema
-│       ├── database/          # Prisma database service & lifecycle hooks
-│       ├── health/            # System health diagnostics endpoint (GET /health)
-│       ├── shared/            # Reusable constants, DTOs, and interfaces
-│       ├── telegram/          # Telegraf bot service & update listener
-│       └── users/             # User domain service & profile lifecycle
-└── frontend/                  # Next.js System Health Dashboard
-    ├── package.json
-    ├── tsconfig.json          # Frontend path aliases (@/*)
-    ├── tailwind.config.js     # Glassmorphism dark theme styling
-    └── app/
-        ├── layout.tsx
-        ├── globals.css
-        └── page.tsx           # Live diagnostic status monitor (v0.2.0)
-```
+- **Stock Price**: `"What is Apple's stock price?"` or `"What's AAPL trading at?"`
+- **Company Research**: `"Tell me about Microsoft"` or `"Apple company profile"`
+- **Financial Metrics**: `"What is the market cap of Tesla?"` or `"Show me NVDA P/E ratio"`
+- **Financial News**: `"What is the latest news about NVIDIA?"`
+- **Stock Comparison**: `"Compare Apple and Microsoft"` or `"AAPL vs MSFT"`
+- **General Conversation**: Greetings like `"hi"` or `"what can you do?"` remain fast and never call Finnhub API.
 
 ---
 
@@ -85,7 +47,13 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 # Groq API Configuration
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
+
+# Finnhub Financial Data Provider Key
+FINNHUB_API_KEY="PASTE_YOUR_FINNHUB_API_KEY_HERE"
 ```
+
+> [!IMPORTANT]
+> The `backend/.env.example` file contains the placeholder `FINNHUB_API_KEY="PASTE_YOUR_FINNHUB_API_KEY_HERE"`. Paste your actual Finnhub key directly into your local `backend/.env`. Never commit real API keys to version control.
 
 ---
 
@@ -127,18 +95,19 @@ npm run dev:frontend   # Starts Next.js dashboard
   "message": "Atlas AI health check completed successfully.",
   "data": {
     "status": "ok",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "environment": "development",
     "database": "connected",
     "telegram": "connected",
     "groq": "connected",
+    "finnhub": "connected",
     "stats": {
       "totalUsers": 12,
       "totalConversations": 18
     },
     "uptimeSeconds": 342
   },
-  "timestamp": "2026-08-07T22:00:00.000Z"
+  "timestamp": "2026-08-08T17:30:00.000Z"
 }
 ```
 

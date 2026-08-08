@@ -12,8 +12,10 @@ import { LLM_PROVIDER_TOKEN } from './interfaces/llm-provider.interface';
 import { AIOrchestratorService } from './orchestrator/orchestrator.service';
 import { ExecutionPipelineService } from './pipeline/execution-pipeline.service';
 import { AppLogger } from '@/common/logger/logger.service';
+import { FinanceModule } from '@/finance/finance.module';
 
 @Module({
+  imports: [FinanceModule],
   providers: [
     AppLogger,
     GroqService,
@@ -49,4 +51,4 @@ import { AppLogger } from '@/common/logger/logger.service';
     ExecutionPipelineService,
   ],
 })
-export class AIModule { }
+export class AIModule {}

@@ -6,28 +6,28 @@ export class ClarificationService {
   evaluateClarification(
     intent: IntentCategory,
     entities: ExtractedEntities,
-    rawMessage: string,
+    _rawMessage: string,
   ): { needsClarification: boolean; clarificationQuestion?: string } {
-    const text = rawMessage.trim();
-    const wordCount = text.split(/\s+/).length;
-
-    // Ambiguity Trigger 1: Single company query with very brief wording and no specific metric requested
-    // Example: "Tell me about Apple." or "Apple"
+    // 1. COMPANY_RESEARCH: If a company name or ticker symbol is already present, do NOT ask for clarification.
     if (
       intent === IntentCategory.COMPANY_RESEARCH &&
-      entities.companies.length === 1 &&
-      (entities.metrics?.length || 0) === 0 &&
-      wordCount <= 5
+      (entities.companies?.length || 0) === 0 &&
+      (entities.tickers?.length || 0) === 0
     ) {
-      const companyName = entities.companies[0];
       return {
         needsClarification: true,
-        clarificationQuestion: `Are you interested in ${companyName}'s latest financial performance (revenue/earnings), valuation metrics, company overview, or peer comparison?`,
+        clarificationQuestion:
+          'Which company or stock symbol would you like to research? (e.g., "Tell me about Microsoft" or "AAPL")',
       };
     }
 
-    // Ambiguity Trigger 2: Comparison query with only 1 company extracted
-    if (intent === IntentCategory.COMPANY_COMPARISON && entities.companies.length < 2) {
+    // 2. Comparison query: Require at least 2 companies or tickers
+    if (
+      (intent === IntentCategory.STOCK_COMPARISON ||
+        intent === IntentCategory.COMPANY_COMPARISON) &&
+      (entities.companies?.length || 0) < 2 &&
+      (entities.tickers?.length || 0) < 2
+    ) {
       return {
         needsClarification: true,
         clarificationQuestion:

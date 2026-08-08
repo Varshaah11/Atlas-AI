@@ -47,4 +47,4 @@ import { UsersModule } from '@/users/users.module';
     MESSAGE_SERVICE_TOKEN,
   ],
 })
-export class ChatModule { }
+export class ChatModule {}

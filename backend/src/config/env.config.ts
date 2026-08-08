@@ -5,11 +5,10 @@ export interface EnvironmentVariables {
   TELEGRAM_BOT_TOKEN: string;
   GROQ_API_KEY: string;
   GROQ_MODEL: string;
+  FINNHUB_API_KEY: string;
 }
 
-export const validateEnv = (
-  config: Record<string, unknown>,
-): EnvironmentVariables => {
+export const validateEnv = (config: Record<string, unknown>): EnvironmentVariables => {
   const PORT = Number(config.PORT || 3001);
   const NODE_ENV = (config.NODE_ENV as string) || 'development';
 
@@ -17,8 +16,8 @@ export const validateEnv = (
   const TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN as string;
 
   const GROQ_API_KEY = config.GROQ_API_KEY as string;
-  const GROQ_MODEL =
-    (config.GROQ_MODEL as string) || 'llama-3.3-70b-versatile';
+  const GROQ_MODEL = (config.GROQ_MODEL as string) || 'llama-3.3-70b-versatile';
+  const FINNHUB_API_KEY = (config.FINNHUB_API_KEY as string) || '';
 
   const missingVars: string[] = [];
 
@@ -32,6 +31,10 @@ export const validateEnv = (
 
   if (!GROQ_API_KEY && NODE_ENV !== 'test') {
     missingVars.push('GROQ_API_KEY');
+  }
+
+  if (!FINNHUB_API_KEY && NODE_ENV !== 'test') {
+    missingVars.push('FINNHUB_API_KEY');
   }
 
   if (missingVars.length > 0 && NODE_ENV === 'production') {
@@ -55,5 +58,6 @@ export const validateEnv = (
     TELEGRAM_BOT_TOKEN,
     GROQ_API_KEY,
     GROQ_MODEL,
+    FINNHUB_API_KEY,
   };
 };

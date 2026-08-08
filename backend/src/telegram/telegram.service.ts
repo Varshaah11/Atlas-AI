@@ -1,21 +1,14 @@
-import {
-  Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, OnModuleDestroy, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Telegraf } from 'telegraf';
-
 import {
   IConversationGateway,
   CONVERSATION_GATEWAY_TOKEN,
 } from '@/chat/interfaces/conversation-gateway.interface';
-
 import { AppLogger } from '@/common/logger/logger.service';
 
 @Injectable()
-export class TelegramService implements OnModuleInit, OnModuleDestroy {
+export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy {
   private bot: Telegraf | null = null;
   private isBotActive = false;
 
@@ -26,9 +19,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     private readonly conversationGateway: IConversationGateway,
 
     private readonly logger: AppLogger,
-  ) { }
+  ) {}
 
-  async onModuleInit() {
+  async onApplicationBootstrap() {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
 
     if (!token) {
@@ -43,11 +36,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       this.bot = new Telegraf(token);
 
       this.bot.catch((err) => {
-        this.logger.error(
-          `Telegraf runtime error: ${err}`,
-          '',
-          'TelegramService',
-        );
+        this.logger.error(`Telegraf runtime error: ${err}`, '', 'TelegramService');
       });
 
       this.bot.on('text', async (ctx) => {
@@ -59,16 +48,15 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
           await ctx.sendChatAction('typing');
 
-          const reply =
-            await this.conversationGateway.handleIncomingMessage({
-              userData: {
-                telegramId: from.id.toString(),
-                username: from.username,
-                firstName: from.first_name,
-                lastName: from.last_name,
-              },
-              messageText,
-            });
+          const reply = await this.conversationGateway.handleIncomingMessage({
+            userData: {
+              telegramId: from.id.toString(),
+              username: from.username,
+              firstName: from.first_name,
+              lastName: from.last_name,
+            },
+            messageText,
+          });
 
           await ctx.reply(reply);
         } catch (error: any) {
@@ -89,13 +77,22 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         drop_pending_updates: true,
       });
 
-      // Start long polling
-      await this.bot.launch({
-        dropPendingUpdates: true,
-      });
-
-      process.once('SIGINT', () => this.bot?.stop('SIGINT'));
-      process.once('SIGTERM', () => this.bot?.stop('SIGTERM'));
+      // Launch long polling asynchronously so it does not block NestJS app.listen()
+      this.bot
+        .launch({
+          dropPendingUpdates: true,
+        })
+        .then(() => {
+          this.logger.log('Telegram bot polling loop stopped.', 'TelegramService');
+        })
+        .catch((err: any) => {
+          this.isBotActive = false;
+          this.logger.error(
+            `Telegram bot polling error: ${err.message}`,
+            err.stack,
+            'TelegramService',
+          );
+        });
 
       this.isBotActive = true;
 
@@ -123,10 +120,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       this.bot.stop('SIGINT');
       this.isBotActive = false;
 
-      this.logger.log(
-        'Telegram bot stopped gracefully.',
-        'TelegramService',
-      );
+      this.logger.log('Telegram bot stopped gracefully.', 'TelegramService');
     }
   }
 }

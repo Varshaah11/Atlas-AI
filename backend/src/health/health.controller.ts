@@ -1,6 +1,7 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { ILLMProvider, LLM_PROVIDER_TOKEN } from '@/ai/interfaces/llm-provider.interface';
 import { PrismaService } from '@/database/prisma.service';
+import { FinanceService } from '@/finance/finance.service';
 import { APP_CONSTANTS } from '@/shared/constants/app.constants';
 import { ApiResponse, createApiResponse } from '@/shared/interfaces';
 import { TelegramService } from '@/telegram/telegram.service';
@@ -17,6 +18,7 @@ export interface HealthCheckData {
   database: 'connected' | 'disconnected';
   telegram: 'connected' | 'disconnected';
   groq: 'connected' | 'disconnected';
+  finnhub: 'connected' | 'disconnected';
   stats: SystemStats;
   uptimeSeconds: number;
 }
@@ -29,6 +31,7 @@ export class HealthController {
     private readonly prisma: PrismaService,
     private readonly telegramService: TelegramService,
     @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: ILLMProvider,
+    private readonly financeService: FinanceService,
   ) {}
 
   @Get()
@@ -36,6 +39,7 @@ export class HealthController {
     const isDbConnected = await this.prisma.isHealthy();
     const isTelegramHealthy = this.telegramService.isHealthy();
     const isGroqHealthy = await this.llmProvider.isHealthy();
+    const isFinnhubHealthy = await this.financeService.isHealthy();
 
     const uptimeSeconds = Math.floor((Date.now() - this.startTime) / 1000);
 
@@ -62,6 +66,7 @@ export class HealthController {
       database: isDbConnected ? 'connected' : 'disconnected',
       telegram: isTelegramHealthy ? 'connected' : 'disconnected',
       groq: isGroqHealthy ? 'connected' : 'disconnected',
+      finnhub: isFinnhubHealthy ? 'connected' : 'disconnected',
       stats: {
         totalUsers,
         totalConversations,

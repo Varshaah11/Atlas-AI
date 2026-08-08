@@ -11,15 +11,67 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       return { category: IntentCategory.UNKNOWN, confidence: 0.0 };
     }
 
-    if (/\b(compare|versus|vs\.?|peer analysis|benchmark)\b/.test(text)) {
+    // 1. General conversation greetings & basic prompts (must NEVER call Finnhub)
+    if (
+      /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|how's it going|what's up|who are you|what can you do|help)\b/i.test(
+        text,
+      ) ||
+      /^(hi|hello|hey|thanks|help|howdy)$/i.test(text)
+    ) {
       return {
-        category: IntentCategory.COMPANY_COMPARISON,
-        confidence: 0.9,
-        reasoning: 'Matched comparison keywords (vs, compare, peer analysis)',
+        category: IntentCategory.GENERAL_CHAT,
+        confidence: 0.95,
+        reasoning: 'Matched general chat or greeting pattern',
       };
     }
 
-    if (/\b(watchlist|track list|monitored stocks)\b/.test(text)) {
+    // 2. Comparison: Compare Apple and Microsoft / AAPL vs MSFT
+    if (/\b(compare|versus|vs\.?|peer analysis|benchmark|side by side)\b/i.test(text)) {
+      return {
+        category: IntentCategory.STOCK_COMPARISON,
+        confidence: 0.9,
+        reasoning: 'Matched stock comparison keywords',
+      };
+    }
+
+    // 3. Financial News: What is the latest news about NVIDIA? / NVDA news
+    if (/\b(news|latest news|headline|headlines|article|articles|press release)\b/i.test(text)) {
+      return {
+        category: IntentCategory.FINANCIAL_NEWS,
+        confidence: 0.9,
+        reasoning: 'Matched financial news keywords',
+      };
+    }
+
+    // 4. Stock Price: What is Apple's stock price? / What's AAPL trading at?
+    if (
+      /\b(stock price|price|trading at|quote|share price|current price|ticker price)\b/i.test(
+        text,
+      ) ||
+      /what'?s? \$?[a-z0-9]{1,15} (trading at|worth|at)/i.test(text)
+    ) {
+      return {
+        category: IntentCategory.STOCK_PRICE,
+        confidence: 0.9,
+        reasoning: 'Matched stock price query pattern',
+      };
+    }
+
+    // 5. Financial Metrics: P/E ratio, market cap, 52 week high/low, ebitda, revenue, margin
+    if (
+      /\b(p\/e|pe ratio|valuation|market cap|market capitalization|52 week|52-week|ebitda|gross margin|operating margin|eps|earnings per share|financial metrics|metrics)\b/i.test(
+        text,
+      )
+    ) {
+      return {
+        category: IntentCategory.FINANCIAL_METRICS,
+        confidence: 0.9,
+        reasoning: 'Matched financial metrics query pattern',
+      };
+    }
+
+    // 6. Watchlist
+    if (/\b(watchlist|track list|monitored stocks)\b/i.test(text)) {
       return {
         category: IntentCategory.WATCHLIST,
         confidence: 0.85,
@@ -27,7 +79,8 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    if (/\b(alert|notify|trigger|price target)\b/.test(text)) {
+    // 7. Alert
+    if (/\b(alert|notify|trigger|price target)\b/i.test(text)) {
       return {
         category: IntentCategory.ALERT,
         confidence: 0.85,
@@ -35,7 +88,8 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    if (/\b(document|pdf|file|transcript|prospectus)\b/.test(text)) {
+    // 8. Document
+    if (/\b(document|pdf|file|transcript|prospectus|10-k|10-q)\b/i.test(text)) {
       return {
         category: IntentCategory.DOCUMENT_QUERY,
         confidence: 0.85,
@@ -43,10 +97,9 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
+    // 9. Macro / Market info
     if (
-      /\b(market|s&p|nasdaq|dow|fed|inflation|interest rates|treasury|yield curve|macro)\b/.test(
-        text,
-      )
+      /\b(s&p|nasdaq|dow|fed|inflation|interest rates|treasury|yield curve|macro)\b/i.test(text)
     ) {
       return {
         category: IntentCategory.MARKET_INFORMATION,
@@ -55,24 +108,16 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
+    // 10. Company Research: Tell me about Microsoft / company profile / overview / research
     if (
-      /\b(revenue|earnings|ebitda|p\/e|valuation|balance sheet|cash flow|financials|ticker|stock|10-k|10-q|q1|q2|q3|q4|profit|margin|growth|sec)\b/.test(
+      /\b(tell me about|about|profile|overview|company info|information on|research|details on)\b/i.test(
         text,
-      ) ||
-      /\b[a-z]{1,5}\b/.test(text)
+      )
     ) {
       return {
         category: IntentCategory.COMPANY_RESEARCH,
-        confidence: 0.8,
-        reasoning: 'Matched financial metric or company research patterns',
-      };
-    }
-
-    if (/\b(hi|hello|hey|who are you|what can you do|help)\b/.test(text)) {
-      return {
-        category: IntentCategory.GENERAL_CHAT,
-        confidence: 0.95,
-        reasoning: 'Matched general chat or greeting pattern',
+        confidence: 0.9,
+        reasoning: 'Matched company research query pattern',
       };
     }
 

@@ -25,13 +25,32 @@ export class EntityExtractorService {
     const dates = new Set<string>();
     const requestedActions = new Set<string>();
 
-    // 1. Extract explicit ticker symbols with optional $ prefix (e.g. $AAPL, AAPL)
-    const tickerMatches = text.match(/\b\$?([A-Z]{1,5})\b/g);
+    // 1. Extract explicit ticker symbols with optional $ prefix (e.g. $AAPL, AAPL, INVALIDTICKERXYZ)
+    const tickerMatches = text.match(/\b\$?([A-Z]{1,12})\b/g);
     if (tickerMatches) {
       for (const raw of tickerMatches) {
         const symbol = raw.replace('$', '');
         // Exclude common English short uppercase words
-        if (!['A', 'I', 'IN', 'IS', 'IT', 'ON', 'OR', 'US', 'THE', 'AND', 'FOR'].includes(symbol)) {
+        if (
+          ![
+            'A',
+            'I',
+            'IN',
+            'IS',
+            'IT',
+            'ON',
+            'OR',
+            'US',
+            'THE',
+            'AND',
+            'FOR',
+            'WHAT',
+            'WHATS',
+            'TELL',
+            'SHOW',
+            'ME',
+          ].includes(symbol)
+        ) {
           tickers.add(symbol);
         }
       }

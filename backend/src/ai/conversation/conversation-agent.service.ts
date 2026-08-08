@@ -70,6 +70,19 @@ export class ConversationAgentService implements BaseAgent, OnModuleInit {
     };
 
     this.logger.log(
+      `[Intent] "${messageText}" → ${intentResult.category} (Confidence: ${intentResult.confidence})`,
+      'ConversationAgent',
+    );
+    this.logger.log(
+      `[Entities] Tickers: [${entities.tickers.join(', ')}], Companies: [${entities.companies.join(', ')}]`,
+      'ConversationAgent',
+    );
+    this.logger.log(
+      `[Clarification] Evaluated: needsClarification=${clarification.needsClarification}`,
+      'ConversationAgent',
+    );
+
+    this.logger.log(
       `ConversationAgent created Task [ID: ${taskId}] | Intent: ${intentResult.category} | Entities: (${entities.tickers.join(', ') || 'none'}) | Needs Clarification: ${clarification.needsClarification}`,
       'ConversationAgent',
     );
