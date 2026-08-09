@@ -111,6 +111,7 @@ export class ExecutionPipelineService {
       IntentCategory.FINANCIAL_NEWS,
       IntentCategory.STOCK_COMPARISON,
       IntentCategory.COMPANY_COMPARISON,
+      IntentCategory.MARKET_INFORMATION,
     ].includes(intent);
 
     if (isMarketIntent) {

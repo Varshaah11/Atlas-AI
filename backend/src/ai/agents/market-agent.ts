@@ -31,6 +31,7 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
       IntentCategory.FINANCIAL_NEWS,
       IntentCategory.STOCK_COMPARISON,
       IntentCategory.COMPANY_COMPARISON,
+      IntentCategory.MARKET_INFORMATION,
     ].includes(task.intent as IntentCategory);
   }
 

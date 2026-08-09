@@ -35,7 +35,11 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
     }
 
     // 3. Financial News: What is the latest news about NVIDIA? / NVDA news
-    if (/\b(news|latest news|headline|headlines|article|articles|press release)\b/i.test(text)) {
+    if (
+      /\b(news|latest news|headline|headlines|article|articles|press release|market news|company news)\b/i.test(
+        text,
+      )
+    ) {
       return {
         category: IntentCategory.FINANCIAL_NEWS,
         confidence: 0.9,
@@ -45,7 +49,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
 
     // 4. Stock Price: What is Apple's stock price? / What's AAPL trading at?
     if (
-      /\b(stock price|price|trading at|quote|share price|current price|ticker price)\b/i.test(
+      /\b(stock price|price|trading at|quote|share price|current price|ticker price|stock value|share value|market price)\b/i.test(
         text,
       ) ||
       /what'?s? \$?[a-z0-9]{1,15} (trading at|worth|at)/i.test(text)
@@ -59,7 +63,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
 
     // 5. Financial Metrics: P/E ratio, market cap, 52 week high/low, ebitda, revenue, margin
     if (
-      /\b(p\/e|pe ratio|valuation|market cap|market capitalization|52 week|52-week|ebitda|gross margin|operating margin|eps|earnings per share|financial metrics|metrics)\b/i.test(
+      /\b(p\/e|pe ratio|valuation|market cap|market capitalization|52 week|52-week|ebitda|gross margin|operating margin|eps|earnings per share|financial metrics|metrics|financials|financial data|financial info)\b/i.test(
         text,
       )
     ) {
@@ -120,7 +124,9 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
 
     // 10. Macro / Market info
     if (
-      /\b(s&p|nasdaq|dow|fed|inflation|interest rates|treasury|yield curve|macro)\b/i.test(text)
+      /\b(s&p|nasdaq|dow|fed|inflation|interest rates|treasury|yield curve|macro|market info|market information|market data|market update|market updates|market overview|market performance)\b/i.test(
+        text,
+      )
     ) {
       return {
         category: IntentCategory.MARKET_INFORMATION,
@@ -131,7 +137,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
 
     // 11. Company Research: Tell me about Microsoft / company profile / overview / research
     if (
-      /\b(tell me about|about|profile|overview|company info|information on|research|details on)\b/i.test(
+      /\b(tell me about|about|profile|overview|company info|information on|information for|research|details on|details for|company overview|stock overview)\b/i.test(
         text,
       )
     ) {
