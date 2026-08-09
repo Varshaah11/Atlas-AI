@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { fetchApi } from '@/lib/api';
+import { useToast } from '@/components/ui/toast-provider';
 
 export interface DocumentDto {
   id: string;
@@ -19,11 +21,11 @@ export interface DocumentDto {
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export default function DocumentsPage() {
+  const { showToast } = useToast();
   const [documents, setDocuments] = useState<DocumentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Selected file state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -43,9 +45,7 @@ export default function DocumentsPage() {
   // Fetch document list from API
   const fetchDocuments = async () => {
     try {
-      const res = await fetch('http://localhost:3001/documents', {
-        headers: { 'x-user-id': 'default-web-user' },
-      });
+      const res = await fetchApi('/documents');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: DocumentDto[] = await res.json();
       setDocuments(data);
@@ -112,9 +112,8 @@ export default function DocumentsPage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const res = await fetch('http://localhost:3001/documents', {
+      const res = await fetchApi('/documents', {
         method: 'POST',
-        headers: { 'x-user-id': 'default-web-user' },
         body: formData,
       });
 
@@ -130,11 +129,11 @@ export default function DocumentsPage() {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
 
-      showToast('Document uploaded successfully. Ingestion in progress...', 'success');
+      showToast('success', 'Document uploaded successfully. Ingestion in progress...');
       fetchDocuments();
     } catch (err: any) {
       setValidationError(err.message || 'Failed to upload document. Please try again.');
-      showToast('Document upload failed.', 'error');
+      showToast('error', 'Document upload failed.');
     } finally {
       setUploading(false);
     }
@@ -146,18 +145,17 @@ export default function DocumentsPage() {
 
     try {
       setDeleting(true);
-      const res = await fetch(`http://localhost:3001/documents/${docToDelete.id}`, {
+      const res = await fetchApi(`/documents/${docToDelete.id}`, {
         method: 'DELETE',
-        headers: { 'x-user-id': 'default-web-user' },
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       setDocuments((prev) => prev.filter((d) => d.id !== docToDelete.id));
-      showToast(`Document "${docToDelete.filename}" deleted successfully.`, 'success');
+      showToast('success', `Document "${docToDelete.filename}" deleted successfully.`);
       setDocToDelete(null);
     } catch (err: any) {
-      showToast(`Failed to delete document: ${err.message}`, 'error');
+      showToast('error', `Failed to delete document: ${err.message}`);
     } finally {
       setDeleting(false);
     }
@@ -176,11 +174,10 @@ export default function DocumentsPage() {
       // Prompt asking DocumentAgent about the active document
       const fullPrompt = `Document Query regarding ${activeQADoc.filename}: ${questionText.trim()}`;
 
-      const res = await fetch('http://localhost:3001/chat/message', {
+      const res = await fetchApi('/chat/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'default-web-user',
         },
         body: JSON.stringify({ messageText: fullPrompt }),
       });
@@ -196,10 +193,6 @@ export default function DocumentsPage() {
     }
   };
 
-  const showToast = (text: string, type: 'success' | 'error') => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 4000);
-  };
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -245,20 +238,7 @@ export default function DocumentsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Toast Notification */}
-        {toastMessage && (
-          <div
-            className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-xl border shadow-xl transition-all duration-300 ${
-              toastMessage.type === 'success'
-                ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/30'
-                : 'bg-red-950/90 text-red-300 border-red-500/30'
-            }`}
-          >
-            {toastMessage.text}
-          </div>
-        )}
+    <div className="space-y-6">
 
         {/* Page Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
@@ -502,7 +482,6 @@ export default function DocumentsPage() {
             </div>
           </div>
         )}
-      </div>
-    </main>
+    </div>
   );
 }

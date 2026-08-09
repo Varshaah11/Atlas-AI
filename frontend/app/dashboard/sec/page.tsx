@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { fetchApi } from '@/lib/api';
 
 interface SecFilingItem {
   form: string;
@@ -33,11 +34,8 @@ export default function SecFilingsPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(
-        `http://localhost:3001/finance/sec-filings?symbol=${encodeURIComponent(symbol)}`,
-        {
-          headers: { 'x-user-id': 'default-web-user' },
-        },
+      const res = await fetchApi(
+        `/finance/sec-filings?symbol=${encodeURIComponent(symbol)}`,
       );
 
       if (!res.ok) {
@@ -47,13 +45,12 @@ export default function SecFilingsPage() {
       const result = await res.json();
       if (!result.success || result.data?.error) {
         setError(result.data?.error || `No SEC filings found for "${symbol}"`);
-        setData(null);
+        setData((prev) => (prev ? prev : null));
       } else {
         setData(result.data);
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to SEC EDGAR service.');
-      setData(null);
+      setError(err.message || 'SEC filing data is temporarily unavailable. Please try again shortly.');
     } finally {
       setLoading(false);
     }
@@ -136,9 +133,15 @@ export default function SecFilingsPage() {
 
       {/* Error Display */}
       {error && !loading && (
-        <div className="glass-card rounded-2xl p-6 border border-red-500/30 bg-red-950/20 text-red-400 text-xs space-y-2">
+        <div className="glass-card rounded-2xl p-6 border border-red-500/30 bg-red-950/20 text-red-400 text-xs space-y-3">
           <p className="font-semibold text-sm">⚠️ SEC Filings Lookup Error</p>
           <p>{error}</p>
+          <button
+            onClick={() => fetchSecFilings(activeSymbol)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition duration-200"
+          >
+            Retry Search
+          </button>
         </div>
       )}
 

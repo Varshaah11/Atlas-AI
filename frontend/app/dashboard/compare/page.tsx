@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { fetchApi } from '@/lib/api';
 
 interface StockQuote {
   currentPrice: number;
@@ -54,11 +55,8 @@ export default function StockComparisonPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(
-        `http://localhost:3001/finance/compare?symbol1=${encodeURIComponent(s1)}&symbol2=${encodeURIComponent(s2)}`,
-        {
-          headers: { 'x-user-id': 'default-web-user' },
-        },
+      const res = await fetchApi(
+        `/finance/compare?symbol1=${encodeURIComponent(s1)}&symbol2=${encodeURIComponent(s2)}`,
       );
 
       if (!res.ok) {
@@ -68,13 +66,12 @@ export default function StockComparisonPage() {
       const result = await res.json();
       if (!result.success || !result.data) {
         setError('Unable to fetch comparison data for specified symbols');
-        setCompData(null);
+        setCompData((prev) => (prev ? prev : null));
       } else {
         setCompData(result.data);
       }
     } catch (err: any) {
-      setError(err.message || 'Error connecting to financial backend service.');
-      setCompData(null);
+      setError(err.message || 'Market comparison data is temporarily unavailable. Please try again shortly.');
     } finally {
       setLoading(false);
     }
@@ -155,9 +152,15 @@ export default function StockComparisonPage() {
 
       {/* Error Display */}
       {error && !loading && (
-        <div className="glass-card rounded-2xl p-6 border border-red-500/30 bg-red-950/20 text-red-400 text-xs space-y-2">
+        <div className="glass-card rounded-2xl p-6 border border-red-500/30 bg-red-950/20 text-red-400 text-xs space-y-3">
           <p className="font-semibold text-sm">⚠️ Comparison Error</p>
           <p>{error}</p>
+          <button
+            onClick={() => fetchComparison(activeSymbol1, activeSymbol2)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition duration-200"
+          >
+            Retry Comparison
+          </button>
         </div>
       )}
 

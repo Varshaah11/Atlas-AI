@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { fetchApi } from '@/lib/api';
+import { useToast } from '@/components/ui/toast-provider';
 
 interface StockAlert {
   id: string;
@@ -33,24 +35,13 @@ export default function AlertsPage() {
   const [targetValue, setTargetValue] = useState<string>('');
   const [secFormType, setSecFormType] = useState<string>('10-K');
 
-  // Toast Notification State
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
+  const { showToast } = useToast();
   const symbolInputRef = useRef<HTMLInputElement>(null);
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
 
   const fetchAlerts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:3001/alerts', {
-        headers: {
-          'x-user-id': 'default-web-user',
-        },
-      });
+      const res = await fetchApi('/alerts');
 
       if (!res.ok) {
         throw new Error(`Failed to fetch alerts (Status ${res.status})`);
@@ -65,7 +56,7 @@ export default function AlertsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     fetchAlerts();
@@ -106,11 +97,10 @@ export default function AlertsPage() {
         payload.targetValue = Number(targetValue);
       }
 
-      const res = await fetch('http://localhost:3001/alerts', {
+      const res = await fetchApi('/alerts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'default-web-user',
         },
         body: JSON.stringify(payload),
       });
@@ -138,11 +128,10 @@ export default function AlertsPage() {
     try {
       setUpdatingId(alertId);
 
-      const res = await fetch(`http://localhost:3001/alerts/${alertId}`, {
+      const res = await fetchApi(`/alerts/${alertId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'default-web-user',
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -168,11 +157,8 @@ export default function AlertsPage() {
     try {
       setUpdatingId(alertId);
 
-      const res = await fetch(`http://localhost:3001/alerts/${alertId}`, {
+      const res = await fetchApi(`/alerts/${alertId}`, {
         method: 'DELETE',
-        headers: {
-          'x-user-id': 'default-web-user',
-        },
       });
 
       const data = await res.json();
@@ -200,25 +186,12 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification Banner */}
-      {toast && (
-        <div
-          className={`fixed top-20 right-6 z-50 px-4 py-3 rounded-lg shadow-xl border backdrop-blur-md flex items-center space-x-3 transition-all duration-300 ${
-            toast.type === 'success'
-              ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
-              : 'bg-rose-950/90 text-rose-300 border-rose-500/40'
-          }`}
-        >
-          <span className="text-lg">{toast.type === 'success' ? '✅' : '⚠️'}</span>
-          <span className="text-xs font-semibold">{toast.message}</span>
-        </div>
-      )}
 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            🔔 Market Alerts
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+            Market Alerts
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             Get notified when stocks move, prices cross thresholds, or new SEC filings appear.

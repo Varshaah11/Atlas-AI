@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { fetchApi } from '@/lib/api';
+import { useToast } from '@/components/ui/toast-provider';
 
 interface ScheduledBriefingConfig {
   id: string;
@@ -58,22 +60,13 @@ export default function BriefingsPage() {
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState<boolean>(false);
 
-  // Toast Notification State
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
+  const { showToast } = useToast();
 
   const handleConnectTelegram = async () => {
     try {
       setGeneratingLink(true);
-      const res = await fetch('http://localhost:3001/users/telegram-link', {
+      const res = await fetchApi('/users/telegram-link', {
         method: 'POST',
-        headers: {
-          'x-user-id': 'default-web-user',
-        },
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -91,11 +84,7 @@ export default function BriefingsPage() {
   const fetchConfig = useCallback(async () => {
     try {
       setLoadingConfig(true);
-      const res = await fetch('http://localhost:3001/briefings/config', {
-        headers: {
-          'x-user-id': 'default-web-user',
-        },
-      });
+      const res = await fetchApi('/briefings/config');
 
       if (!res.ok) {
         throw new Error(`Failed to fetch briefing config (Status ${res.status})`);
@@ -120,15 +109,11 @@ export default function BriefingsPage() {
     } finally {
       setLoadingConfig(false);
     }
-  }, []);
+  }, [showToast]);
 
   const fetchHistory = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/briefings/history', {
-        headers: {
-          'x-user-id': 'default-web-user',
-        },
-      });
+      const res = await fetchApi('/briefings/history');
 
       if (res.ok) {
         const data = await res.json();
@@ -191,11 +176,10 @@ export default function BriefingsPage() {
         enabled,
       };
 
-      const res = await fetch('http://localhost:3001/briefings/config', {
+      const res = await fetchApi('/briefings/config', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'default-web-user',
         },
         body: JSON.stringify(payload),
       });
@@ -221,11 +205,10 @@ export default function BriefingsPage() {
       setGeneratedBriefing(null);
       setDeliveryInfo(null);
 
-      const res = await fetch('http://localhost:3001/briefings/trigger-now', {
+      const res = await fetchApi('/briefings/trigger-now', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'default-web-user',
         },
       });
 
@@ -240,6 +223,12 @@ export default function BriefingsPage() {
       if (data.deliveredToTelegram) {
         setDeliveryInfo('Briefing generated and sent to Telegram.');
         showToast('success', 'Briefing generated and delivered to Telegram.');
+      } else if (deliverTelegram && !telegramConnected) {
+        setDeliveryInfo('Briefing generated. Connect Telegram to receive briefings there.');
+        showToast('info', 'Briefing generated. Connect Telegram to receive briefings in chat.');
+      } else if (deliverTelegram && !data.deliveredToTelegram) {
+        setDeliveryInfo('Briefing generated, but Telegram delivery failed.');
+        showToast('warning', 'Briefing generated, but Telegram delivery failed.');
       } else {
         setDeliveryInfo('Briefing generated successfully.');
         showToast('success', 'Briefing generated successfully.');
@@ -256,25 +245,11 @@ export default function BriefingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification Banner */}
-      {toast && (
-        <div
-          className={`fixed top-20 right-6 z-50 px-4 py-3 rounded-lg shadow-xl border backdrop-blur-md flex items-center space-x-3 transition-all duration-300 ${
-            toast.type === 'success'
-              ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
-              : 'bg-rose-950/90 text-rose-300 border-rose-500/40'
-          }`}
-        >
-          <span className="text-lg">{toast.type === 'success' ? '✅' : '⚠️'}</span>
-          <span className="text-xs font-semibold">{toast.message}</span>
-        </div>
-      )}
-
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            📰 Market Briefings
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+            Market Briefings
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             Configure personalized financial briefings and receive market intelligence on your schedule.

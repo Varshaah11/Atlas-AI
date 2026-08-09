@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { fetchApi, ApiError } from '@/lib/api';
 
 interface ChatMessage {
   id: string;
@@ -68,11 +69,10 @@ export default function FinancialChatPage() {
     setError(null);
 
     try {
-      const res = await fetch('http://localhost:3001/chat/message', {
+      const res = await fetchApi('/chat/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'default-web-user',
         },
         body: JSON.stringify({
           messageText: query,
@@ -110,7 +110,7 @@ export default function FinancialChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] space-y-4">
+    <div className="h-[calc(100vh-150px)] min-h-[500px] flex flex-col space-y-4">
       {/* Header Banner */}
       <div className="glass-card rounded-2xl p-5 border border-slate-800 shrink-0">
         <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export default function FinancialChatPage() {
       </div>
 
       {/* Messages Window */}
-      <div className="flex-1 glass-card rounded-2xl p-6 border border-slate-800 overflow-y-auto space-y-5">
+      <div className="flex-1 min-h-0 glass-card rounded-2xl p-6 border border-slate-800 overflow-y-auto space-y-5">
         {messages.map((msg) => (
           <div
             key={msg.id}

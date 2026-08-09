@@ -2,19 +2,29 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  TrendingUp,
+  MessageSquare,
+  FileText,
+  GitCompare,
+  Files,
+  Bell,
+  Newspaper,
+  Activity,
+} from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const navItems = [
-    { label: '📈 Market Overview', href: '/dashboard' },
-    { label: '💬 Financial AI Chat', href: '/dashboard/chat' },
-    { label: '📄 SEC Filings', href: '/dashboard/sec' },
-    { label: '⚖️ Stock Comparison', href: '/dashboard/compare' },
-    { label: '📁 Documents', href: '/dashboard/documents' },
-    { label: '🔔 Alerts', href: '/dashboard/alerts' },
-    { label: '📰 Briefings', href: '/dashboard/briefings' },
-    { label: '🖥️ System Monitor', href: '/' },
+    { label: 'Market Overview', href: '/dashboard', icon: TrendingUp },
+    { label: 'Financial AI Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { label: 'SEC Filings', href: '/dashboard/sec', icon: FileText },
+    { label: 'Stock Comparison', href: '/dashboard/compare', icon: GitCompare },
+    { label: 'Documents', href: '/dashboard/documents', icon: Files },
+    { label: 'Alerts', href: '/dashboard/alerts', icon: Bell },
+    { label: 'Briefings', href: '/dashboard/briefings', icon: Newspaper },
+    { label: 'System Monitor', href: '/', icon: Activity },
   ];
 
   return (
@@ -35,21 +45,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <nav className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => {
                 const isActive =
-                  item.href === '/dashboard'
+                  item.href === '/'
+                    ? pathname === '/'
+                    : item.href === '/dashboard'
                     ? pathname === '/dashboard'
                     : pathname === item.href || pathname.startsWith(item.href + '/');
+
+                const IconComponent = item.icon;
 
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center space-x-2 ${
                       isActive
                         ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
                     }`}
                   >
-                    {item.label}
+                    <IconComponent className="h-4 w-4 shrink-0" />
+                    <span>{item.label}</span>
                   </Link>
                 );
               })}
@@ -60,21 +75,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="md:hidden flex items-center space-x-2 overflow-x-auto pb-3 pt-1 scrollbar-none">
             {navItems.map((item) => {
               const isActive =
-                item.href === '/dashboard'
+                item.href === '/'
+                  ? pathname === '/'
+                  : item.href === '/dashboard'
                   ? pathname === '/dashboard'
                   : pathname === item.href || pathname.startsWith(item.href + '/');
+
+              const IconComponent = item.icon;
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition duration-200 ${
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition duration-200 flex items-center space-x-1.5 ${
                     isActive
                       ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
                       : 'text-slate-400 hover:text-slate-200 bg-slate-900/40'
                   }`}
                 >
-                  {item.label}
+                  <IconComponent className="h-3.5 w-3.5 shrink-0" />
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
