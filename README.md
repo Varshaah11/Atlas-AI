@@ -1,31 +1,32 @@
-# Atlas AI - AI Financial Assistant
+# Atlas AI - Proactive Financial Intelligence Platform
 
-Atlas AI is an AI-powered Financial Assistant living inside Telegram, designed to operate with the analytical rigor and persona of an experienced senior financial analyst.
+Atlas AI is an executive-grade AI Financial Assistant & Proactive Intelligence Platform living inside Telegram and the Web, designed to operate with the analytical rigor of a senior equity research analyst.
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **Telegram Bot Interface**: Natural conversational interface powered by `Telegraf.js`.
-- **Conversation Gateway**: Input validation, text normalization, and graceful handling of empty or invalid messages.
-- **AI Orchestrator & Conversation Agent**: Multi-agent framework supporting intent classification (`IIntentClassifier`), entity extraction (`EntityExtractorService`), ambiguity clarification (`ClarificationService`), and capability-based agent discovery (`AgentRegistryService`).
-- **Financial Intelligence Layer (Sprint 4)**: Real-time financial context integration via **Finnhub REST API** for real stock quotes, company profiles, financial metrics, news, and stock comparisons.
-- **Strict Anti-Hallucination Guardrails**: Groq receives retrieved Finnhub data as the authoritative source of truth for financial figures. Values are never fabricated or estimated if unavailable.
+- **Telegram Bot Interface**: Natural conversational interface powered by `Telegraf.js` with direct PDF document upload & analysis capabilities.
+- **Financial Intelligence Web Dashboard**: Full-featured Next.js 14 Web Interface featuring Market Overview, Financial AI Chat, SEC Filings Search, Side-by-Side Stock Comparison, Document Intelligence RAG Workspace, Stock Alerts Dashboard, and Scheduled Market Briefings.
+- **AI Orchestrator & Multi-Agent Framework**: Intent classification (`IIntentClassifier`), entity extraction (`EntityExtractorService`), ambiguity clarification (`ClarificationService`), and capability-based agent discovery (`AgentRegistryService`).
+- **Financial Intelligence Layer**: Real-time financial context integration via **Finnhub REST API** for stock quotes, company profiles, fundamental metrics, market news, SEC filings, and peer stock comparisons.
+- **Document Intelligence & Hybrid RAG**: High-accuracy PDF parsing (`pdf-parse`), structural chunking with overlap, hybrid keyword & vector search (`pgvector` cosine similarity), and grounded document query answering (`DocumentAgent`).
+- **Proactive Intelligence & Stock Alerts (Sprint 8)**: User-configurable price threshold alerts (`PRICE_ABOVE`, `PRICE_BELOW`), daily percent movement alerts (`PERCENT_CHANGE_DAILY`), and new filing alerts (`NEW_SEC_FILING`) evaluated on a 5-minute schedule with automated Telegram notifications.
+- **Scheduled Executive Market Briefings (Sprint 8)**: Automated AI market briefings (`DAILY_MORNING`, `DAILY_EVENING`, `WEEKLY_MONDAY`) synthesizing real-time quotes, news, and SEC filings delivered directly to Telegram and stored in briefing history.
+- **Strict Anti-Hallucination Guardrails**: Groq receives retrieved Finnhub and document vector data as the sole source of truth. Figures are never fabricated or estimated if unavailable.
 - **Lightweight TTL Caching**: Quota-friendly in-memory caching (60s Quotes, 10m Profiles/Metrics, 5m News) ensuring free-tier efficiency.
-- **Execution Pipeline**: Decoupled execution pipeline (`ExecutionPipelineService`) managing financial data retrieval, context building, and LLM inference.
-- **Groq LLM Engine**: Powered by Groq (`groq-sdk`) running `llama-3.3-70b-versatile` with latency tracking.
-- **Data Persistence**: Prisma ORM with PostgreSQL + `pgvector` for user profiles, active conversations, and message histories.
-- **Standardized API & Health Monitoring**: `GET /health` endpoint reporting database, Telegram, Groq, and Finnhub health status plus system counters.
-- **System Monitor Dashboard**: Next.js 14 web monitor UI displaying component health status badges and user/conversation stats.
+- **Data Persistence & Security**: PostgreSQL + `pgvector` via Prisma ORM with strict user isolation and `WebAuthGuard` identity enforcement.
 
 ---
 
-## 📈 Supported Financial Queries
+## 📈 Dashboard & Features
 
-- **Stock Price**: `"What is Apple's stock price?"` or `"What's AAPL trading at?"`
-- **Company Research**: `"Tell me about Microsoft"` or `"Apple company profile"`
-- **Financial Metrics**: `"What is the market cap of Tesla?"` or `"Show me NVDA P/E ratio"`
-- **Financial News**: `"What is the latest news about NVIDIA?"`
-- **Stock Comparison**: `"Compare Apple and Microsoft"` or `"AAPL vs MSFT"`
-- **General Conversation**: Greetings like `"hi"` or `"what can you do?"` remain fast and never call Finnhub API.
+- **Market Overview** (`/dashboard`): Real-time stock quotes, valuation metrics, and top company news.
+- **Financial AI Chat** (`/dashboard/chat`): Conversational equity research & financial query assistant.
+- **SEC Filings** (`/dashboard/sec`): Direct lookup and filtering of recent 10-K, 10-Q, and 8-K filings.
+- **Stock Comparison** (`/dashboard/compare`): Side-by-side fundamental metric comparisons.
+- **Document Intelligence** (`/dashboard/documents`): PDF document upload, status monitoring, and grounded RAG query analysis.
+- **Stock & SEC Alerts** (`/dashboard/alerts`): Create, mute, activate, and delete real-time stock price and SEC filing triggers.
+- **Scheduled Briefings** (`/dashboard/briefings`): Configure briefing frequencies, preferred delivery times, tracked stock lists, instant briefing generation (`trigger-now`), and delivery history.
+- **System Monitor** (`/`): Health status monitoring for Postgres, Telegram, Groq, and Finnhub integration.
 
 ---
 
@@ -51,9 +52,6 @@ GROQ_MODEL=llama-3.3-70b-versatile
 # Finnhub Financial Data Provider Key
 FINNHUB_API_KEY="PASTE_YOUR_FINNHUB_API_KEY_HERE"
 ```
-
-> [!IMPORTANT]
-> The `backend/.env.example` file contains the placeholder `FINNHUB_API_KEY="PASTE_YOUR_FINNHUB_API_KEY_HERE"`. Paste your actual Finnhub key directly into your local `backend/.env`. Never commit real API keys to version control.
 
 ---
 
@@ -95,7 +93,7 @@ npm run dev:frontend   # Starts Next.js dashboard
   "message": "Atlas AI health check completed successfully.",
   "data": {
     "status": "ok",
-    "version": "0.3.0",
+    "version": "1.0.0",
     "environment": "development",
     "database": "connected",
     "telegram": "connected",
@@ -107,7 +105,7 @@ npm run dev:frontend   # Starts Next.js dashboard
     },
     "uptimeSeconds": 342
   },
-  "timestamp": "2026-08-08T17:30:00.000Z"
+  "timestamp": "2026-08-09T12:00:00.000Z"
 }
 ```
 
@@ -119,7 +117,7 @@ This repository enforces the **Conventional Commits** specification:
 
 - `feat:` New features
 - `fix:` Bug fixes
-- `refactor:` Code restructuring without feature changes (e.g. `refactor: migrate LLM provider to Groq`)
+- `refactor:` Code restructuring without feature changes
 - `docs:` Documentation updates
 - `chore:` Dependency or toolchain updates
 - `test:` Test additions or updates

@@ -103,6 +103,24 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
 
       if (!from) return;
 
+      const trimmedText = messageText ? messageText.trim() : '';
+
+      // Intercept deep-link account linking command: /start link_<TOKEN> or /link <TOKEN>
+      if (trimmedText.startsWith('/start link_') || trimmedText.startsWith('/link ')) {
+        const rawToken = trimmedText.startsWith('/start link_')
+          ? trimmedText.substring(12).trim()
+          : trimmedText.substring(6).trim();
+
+        if (rawToken) {
+          const linkResult = await this.userService.consumeTelegramLinkToken(
+            rawToken,
+            from.id.toString(),
+          );
+          await ctx.reply(linkResult.message);
+          return;
+        }
+      }
+
       await ctx.sendChatAction('typing');
 
       const reply = await this.conversationGateway.handleIncomingMessage({
@@ -215,6 +233,83 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
       await ctx.reply(
         "❌ I couldn't process that PDF. Please make sure it contains readable text.",
       );
+    }
+  }
+
+  /**
+   * Sends an outbound proactive notification to a user's Telegram account.
+   *
+   * @param telegramId Target user's Telegram ID
+   * @param text Message text to deliver
+   * @returns true if delivered successfully, false if delivery fails or bot is unconfigured
+   */
+  async sendNotification(telegramId: string, text: string): Promise<boolean> {
+    if (!telegramId || typeof telegramId !== 'string' || telegramId.trim().length === 0) {
+      this.logger.warn(
+        'sendNotification called with invalid or empty telegramId',
+        'TelegramService',
+      );
+      return false;
+    }
+
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      this.logger.warn(
+        `sendNotification called with empty text for user ${telegramId}`,
+        'TelegramService',
+      );
+      return false;
+    }
+
+    if (!this.bot) {
+      this.logger.warn(
+        `Cannot send notification to ${telegramId}: Telegram bot is not initialized or configured.`,
+        'TelegramService',
+      );
+      return false;
+    }
+
+    const cleanTelegramId = telegramId.trim();
+    const cleanText = text.trim();
+
+    if (cleanTelegramId.startsWith('web-')) {
+      this.logger.warn(
+        `Cannot send Telegram notification to synthetic web identity '${cleanTelegramId}'. User has no linked Telegram chat ID.`,
+        'TelegramService',
+      );
+      return false;
+    }
+
+    try {
+      // First attempt sending with Markdown parse_mode
+      await this.bot.telegram.sendMessage(cleanTelegramId, cleanText, {
+        parse_mode: 'Markdown',
+      });
+      this.logger.log(
+        `Successfully sent Telegram notification to user ${cleanTelegramId}`,
+        'TelegramService',
+      );
+      return true;
+    } catch (err: any) {
+      // If Markdown parsing failed due to unescaped special characters in AI text, fallback to plain text delivery
+      this.logger.warn(
+        `Markdown delivery to ${cleanTelegramId} failed (${err.message}). Retrying in plain text...`,
+        'TelegramService',
+      );
+      try {
+        await this.bot.telegram.sendMessage(cleanTelegramId, cleanText);
+        this.logger.log(
+          `Successfully sent plain-text Telegram notification to user ${cleanTelegramId}`,
+          'TelegramService',
+        );
+        return true;
+      } catch (fallbackErr: any) {
+        this.logger.error(
+          `Failed to send Telegram notification to user ${cleanTelegramId}: ${fallbackErr.message}`,
+          fallbackErr.stack,
+          'TelegramService',
+        );
+        return false;
+      }
     }
   }
 

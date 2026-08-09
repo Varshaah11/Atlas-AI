@@ -20,18 +20,42 @@ enum MessageRole {
   SYSTEM
 }
 
+enum AlertType {
+  PRICE_ABOVE
+  PRICE_BELOW
+  PERCENT_CHANGE_DAILY
+  NEW_SEC_FILING
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  MUTED
+}
+
+enum BriefingFrequency {
+  DAILY_MORNING
+  DAILY_EVENING
+  WEEKLY_MONDAY
+}
+
 model User {
-  id            String          @id @default(uuid())
-  telegramId    String          @unique
-  username      String?
-  firstName     String?
-  lastName      String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  conversations Conversation[]
-  preference    UserPreference?
-  memories      UserMemory[]
-  documents     Document[]
+  id             String              @id @default(uuid())
+  telegramId     String              @unique
+  telegramChatId String?
+  username       String?
+  firstName      String?
+  lastName       String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  conversations  Conversation[]
+  preference     UserPreference?
+  memories       UserMemory[]
+  documents      Document[]
+  alerts         StockAlert[]
+  briefing       ScheduledBriefing?
+  notifications  NotificationLog[]
+  linkTokens     TelegramLinkToken[]
 
   @@map("users")
 }
@@ -127,4 +151,70 @@ enum DocumentStatus {
   PROCESSING
   READY
   FAILED
+}
+
+model StockAlert {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol          String
+  alertType       AlertType
+  targetValue     Float?
+  secFormType     String?
+  status          AlertStatus @default(ACTIVE)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([symbol, status])
+  @@map("stock_alerts")
+}
+
+model ScheduledBriefing {
+  id              String            @id @default(uuid())
+  userId          String            @unique
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  frequency       BriefingFrequency @default(DAILY_MORNING)
+  preferredTime   String            @default("08:00")
+  symbols         String[]
+  includeNews     Boolean           @default(true)
+  includeSec      Boolean           @default(true)
+  deliverTelegram Boolean           @default(true)
+  enabled         Boolean           @default(true)
+  lastDeliveredAt DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("scheduled_briefings")
+}
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  content   String
+  channel   String   @default("TELEGRAM")
+  delivered Boolean  @default(true)
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notification_logs")
+}
+
+model TelegramLinkToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("telegram_link_tokens")
 }

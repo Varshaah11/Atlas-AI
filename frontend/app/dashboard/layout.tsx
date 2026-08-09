@@ -12,6 +12,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: '📄 SEC Filings', href: '/dashboard/sec' },
     { label: '⚖️ Stock Comparison', href: '/dashboard/compare' },
     { label: '📁 Documents', href: '/dashboard/documents' },
+    { label: '🔔 Alerts', href: '/dashboard/alerts' },
+    { label: '📰 Briefings', href: '/dashboard/briefings' },
     { label: '🖥️ System Monitor', href: '/' },
   ];
 

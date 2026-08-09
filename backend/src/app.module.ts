@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AIModule } from '@/ai/ai.module';
+import { AlertsModule } from '@/alerts/alerts.module';
+import { BriefingsModule } from '@/briefings/briefings.module';
 import { ChatModule } from '@/chat/chat.module';
 import { AppLogger } from '@/common/logger/logger.service';
 import { validateEnv } from '@/config/env.config';
@@ -19,6 +22,7 @@ import { UsersModule } from '@/users/users.module';
       isGlobal: true,
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     SharedModule,
     DatabaseModule,
     UsersModule,
@@ -29,6 +33,8 @@ import { UsersModule } from '@/users/users.module';
     ChatModule,
     TelegramModule,
     DocumentModule,
+    AlertsModule,
+    BriefingsModule,
   ],
   providers: [AppLogger],
 })

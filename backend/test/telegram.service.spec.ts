@@ -248,4 +248,99 @@ describe('TelegramService (PDF Upload & Messaging)', () => {
       );
     });
   });
+
+  describe('Outbound Notification Handling (sendNotification)', () => {
+    it('Test 1 — successful notification: passes correct parameters and returns true', async () => {
+      const mockSendMessage = jest.fn().mockResolvedValue({ message_id: 999 });
+      (telegramService as any).bot = {
+        telegram: {
+          sendMessage: mockSendMessage,
+        },
+      };
+
+      const result = await telegramService.sendNotification('telegram-user-123', 'AAPL price reached $200');
+
+      expect(result).toBe(true);
+      expect(mockSendMessage).toHaveBeenCalledWith(
+        'telegram-user-123',
+        'AAPL price reached $200',
+        { parse_mode: 'Markdown' },
+      );
+    });
+
+    it('Test 2 — Telegram API failure: catches error, logs failure, and returns false without throwing', async () => {
+      const mockSendMessage = jest.fn().mockRejectedValue(new Error('Forbidden: bot was blocked by the user'));
+      (telegramService as any).bot = {
+        telegram: {
+          sendMessage: mockSendMessage,
+        },
+      };
+
+      const result = await telegramService.sendNotification('telegram-user-blocked', 'Market alert');
+
+      expect(result).toBe(false);
+      expect(loggerMock.error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to send Telegram notification to user telegram-user-blocked'),
+        expect.anything(),
+        'TelegramService',
+      );
+    });
+
+    it('Test 2b — Markdown parsing failure: retries with plain text fallback successfully', async () => {
+      const mockSendMessage = jest.fn()
+        .mockRejectedValueOnce(new Error('Bad Request: can\'t parse entities'))
+        .mockResolvedValueOnce({ message_id: 1000 });
+
+      (telegramService as any).bot = {
+        telegram: {
+          sendMessage: mockSendMessage,
+        },
+      };
+
+      const result = await telegramService.sendNotification('telegram-user-123', 'Special text * _ $100');
+
+      expect(result).toBe(true);
+      expect(mockSendMessage).toHaveBeenCalledTimes(2);
+      expect(mockSendMessage).toHaveBeenLastCalledWith('telegram-user-123', 'Special text * _ $100');
+    });
+
+    it('Test 3 — empty/invalid Telegram ID or text: handles safely and returns false', async () => {
+      const mockSendMessage = jest.fn();
+      (telegramService as any).bot = {
+        telegram: {
+          sendMessage: mockSendMessage,
+        },
+      };
+
+      expect(await telegramService.sendNotification('', 'Hello')).toBe(false);
+      expect(await telegramService.sendNotification('   ', 'Hello')).toBe(false);
+      expect(await telegramService.sendNotification('123', '')).toBe(false);
+      expect(await telegramService.sendNotification(null as any, 'Hello')).toBe(false);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('Test 3b — unconfigured bot: returns false safely without throwing', async () => {
+      (telegramService as any).bot = null;
+      const result = await telegramService.sendNotification('12345', 'Hello');
+      expect(result).toBe(false);
+    });
+
+    it('Test 4 — synthetic web user identifier (web-...) returns false safely without calling sendMessage', async () => {
+      const mockSendMessage = jest.fn();
+      (telegramService as any).bot = {
+        telegram: {
+          sendMessage: mockSendMessage,
+        },
+      };
+
+      const result = await telegramService.sendNotification('web-default-web-user', 'Alert text');
+
+      expect(result).toBe(false);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        expect.stringContaining("Cannot send Telegram notification to synthetic web identity 'web-default-web-user'"),
+        'TelegramService',
+      );
+    });
+  });
 });

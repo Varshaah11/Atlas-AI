@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { USER_SERVICE_TOKEN } from './interfaces/user-service.interface';
 import { UserService } from './user.service';
+import { UsersController } from './users.controller';
 import { WebAuthGuard } from '@/common/guards/web-auth.guard';
 import { AppLogger } from '@/common/logger/logger.service';
 
 @Module({
+  controllers: [UsersController],
   providers: [
     AppLogger,
     UserService,

@@ -40,3 +40,4 @@ coverage/
 # Local databases
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
+backend/data/documents/
