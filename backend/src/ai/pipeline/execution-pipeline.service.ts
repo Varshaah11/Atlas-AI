@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { AgentResult } from '../agents/agent.types';
+import { DocumentAgent } from '../agents/document-agent';
 import { MarketAgent } from '../agents/market-agent';
 import { ResearchAgent } from '../agents/research-agent';
 import {
@@ -9,7 +10,7 @@ import {
 import { IntentCategory } from '../conversation/conversation.types';
 import { ILLMProvider, LLM_PROVIDER_TOKEN } from '../interfaces/llm-provider.interface';
 import { ExecutionContext } from '../orchestrator/execution-context';
-import { GENERAL_CHAT_SYSTEM_PROMPT } from '../prompts';
+import { GENERAL_CHAT_SYSTEM_PROMPT, DOCUMENT_QUERY_SYSTEM_PROMPT } from '../prompts';
 import { AppLogger } from '@/common/logger/logger.service';
 import { MemoryService } from '@/memory/memory.service';
 
@@ -20,6 +21,7 @@ export class ExecutionPipelineService {
     @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: ILLMProvider,
     private readonly researchAgent: ResearchAgent,
     private readonly marketAgent: MarketAgent,
+    private readonly documentAgent: DocumentAgent,
     private readonly memoryService: MemoryService,
     private readonly logger: AppLogger,
   ) {}
@@ -168,7 +170,102 @@ export class ExecutionPipelineService {
       };
     }
 
-    // ROUTING PATH 3: GENERAL_CHAT & OTHER INTENTS → Direct to Groq with GENERAL_CHAT_SYSTEM_PROMPT
+    // ROUTING PATH 3: DOCUMENT_QUERY → DocumentAgent (DocumentSearchService + Groq)
+    if (intent === IntentCategory.DOCUMENT_QUERY) {
+      this.logger.log(
+        `[Pipeline] ${intent} → Routing to DocumentAgent (DocumentSearchService)...`,
+        'ExecutionPipelineService',
+      );
+
+      let agentResult;
+      try {
+        agentResult = await this.documentAgent.execute(context);
+      } catch (err) {
+        this.logger.error(
+          `DocumentAgent execution error: ${err}`,
+          undefined,
+          'ExecutionPipelineService',
+        );
+        return {
+          agentName: 'DocumentAgent',
+          success: true,
+          output: "I couldn't find that information in the uploaded document.",
+          executionTimeMs: Date.now() - startTime,
+          metadata: { intent: task.intent, searchError: true },
+        };
+      }
+
+      if (!agentResult.success || agentResult.metadata?.noChunksFound) {
+        this.logger.log(
+          `[Pipeline] DocumentAgent returned direct response (no chunks or error). Bypassing Groq.`,
+          'ExecutionPipelineService',
+        );
+
+        return {
+          agentName: agentResult.agentName,
+          success: true,
+          output: agentResult.output,
+          executionTimeMs: Date.now() - startTime,
+          metadata: {
+            intent: task.intent,
+            ...agentResult.metadata,
+          },
+        };
+      }
+
+      let fullUserPrompt = `${task.message}\n\n${agentResult.output}\n\nINSTRUCTION: Answer the user's question using ONLY the [RETRIEVED DOCUMENT CONTEXT] provided above. If the retrieved context does not contain the answer to the question, respond ONLY with: "I couldn't find that information in the uploaded document." Do not use external or general knowledge.`;
+      if (memoryPrompt) {
+        fullUserPrompt += `\n\n${memoryPrompt}`;
+      }
+
+      const preparedContext = this.contextBuilder.buildContext(
+        conversationHistory,
+        fullUserPrompt,
+        DOCUMENT_QUERY_SYSTEM_PROMPT,
+      );
+
+      this.logger.log(
+        `[Pipeline] Valid DocumentAgent context attached. Sending prompt to Groq...`,
+        'ExecutionPipelineService',
+      );
+
+      let llmResult;
+      try {
+        llmResult = await this.llmProvider.generateResponse(preparedContext);
+      } catch (err) {
+        this.logger.error(
+          `LLM provider error in DocumentAgent pipeline: ${err}`,
+          undefined,
+          'ExecutionPipelineService',
+        );
+        return {
+          agentName: 'ExecutionPipelineService',
+          success: false,
+          output: "I couldn't find that information in the uploaded document.",
+          executionTimeMs: Date.now() - startTime,
+          metadata: { intent: task.intent, llmError: true },
+        };
+      }
+
+      // Asynchronously trigger non-blocking user memory update
+      void this.extractAndUpdateMemoryAsync(userId, task.message, llmResult.text);
+
+      const totalPipelineTimeMs = Date.now() - startTime;
+      return {
+        agentName: agentResult.agentName,
+        success: true,
+        output: llmResult.text,
+        executionTimeMs: totalPipelineTimeMs,
+        metadata: {
+          llmExecutionMs: llmResult.executionTimeMs,
+          messageCount: preparedContext.messageCount,
+          intent: task.intent,
+          documentIds: agentResult.metadata?.documentIds,
+        },
+      };
+    }
+
+    // ROUTING PATH 4: GENERAL_CHAT & OTHER INTENTS → Direct to Groq with GENERAL_CHAT_SYSTEM_PROMPT
     this.logger.log(
       `[Pipeline] ${intent} → Non-financial intent. Skipping FinanceService & Finnhub. Sending request directly to Groq...`,
       'ExecutionPipelineService',
@@ -176,7 +273,8 @@ export class ExecutionPipelineService {
 
     // Shortcut: Directly answer simple greetings without invoking LLM to avoid hallucinations
     if (intent === IntentCategory.GENERAL_CHAT) {
-      const greetingPattern = /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|how's it going|what's up|who are you|what can you do|help)\b/i;
+      const greetingPattern =
+        /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|how's it going|what's up|who are you|what can you do|help)\b/i;
       if (greetingPattern.test(task.message.trim())) {
         const simpleResponse = `Hello! I'm Atlas AI, your financial intelligence assistant. How can I help you today?`;
         return {
@@ -188,7 +286,6 @@ export class ExecutionPipelineService {
         };
       }
     }
-
 
     const fullUserPrompt = memoryPrompt
       ? `${memoryPrompt}\n\n[CURRENT USER MESSAGE]\n${task.message}`

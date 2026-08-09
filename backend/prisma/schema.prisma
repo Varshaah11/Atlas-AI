@@ -31,6 +31,7 @@ model User {
   conversations Conversation[]
   preference    UserPreference?
   memories      UserMemory[]
+  documents     Document[]
 
   @@map("users")
 }
@@ -89,4 +90,41 @@ model Message {
 
   @@index([conversationId])
   @@map("messages")
+}
+
+model Document {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename    String
+  mimeType    String
+  fileSize    Int
+  title       String?
+  status      DocumentStatus  @default(UPLOADED)
+  pageCount   Int?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  chunks      DocumentChunk[]
+
+  @@index([userId])
+}
+
+model DocumentChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunkIndex  Int
+  pageNumber  Int?
+  content     String
+  embedding   Json   // Embedding vector (fallback JSON array; pgvector not supported in current Prisma version)
+  createdAt   DateTime @default(now())
+
+  @@index([documentId])
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
 }

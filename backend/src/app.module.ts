@@ -5,6 +5,7 @@ import { ChatModule } from '@/chat/chat.module';
 import { AppLogger } from '@/common/logger/logger.service';
 import { validateEnv } from '@/config/env.config';
 import { DatabaseModule } from '@/database/database.module';
+import { DocumentModule } from '@/documents/document.module';
 import { FinanceModule } from '@/finance/finance.module';
 import { HealthModule } from '@/health/health.module';
 import { MemoryModule } from '@/memory/memory.module';
@@ -27,6 +28,7 @@ import { UsersModule } from '@/users/users.module';
     AIModule,
     ChatModule,
     TelegramModule,
+    DocumentModule,
   ],
   providers: [AppLogger],
 })

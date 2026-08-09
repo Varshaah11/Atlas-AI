@@ -10,8 +10,7 @@ export class ClarificationService {
   ): { needsClarification: boolean; clarificationQuestion?: string } {
     // 1. COMPANY_RESEARCH or SEC_FILINGS: If a company name or ticker symbol is already present, do NOT ask for clarification.
     if (
-      (intent === IntentCategory.COMPANY_RESEARCH ||
-        intent === IntentCategory.SEC_FILINGS) &&
+      (intent === IntentCategory.COMPANY_RESEARCH || intent === IntentCategory.SEC_FILINGS) &&
       (entities.companies?.length || 0) === 0 &&
       (entities.tickers?.length || 0) === 0
     ) {
