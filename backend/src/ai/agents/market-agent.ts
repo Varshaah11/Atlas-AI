@@ -76,10 +76,15 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
       includeQuote:
         intent === IntentCategory.STOCK_PRICE ||
         intent === IntentCategory.FINANCIAL_METRICS ||
-        intent === IntentCategory.COMPANY_RESEARCH,
+        intent === IntentCategory.COMPANY_RESEARCH ||
+        intent === IntentCategory.MARKET_INFORMATION,
       includeProfile: true,
-      includeMetrics: intent === IntentCategory.FINANCIAL_METRICS,
-      includeNews: intent === IntentCategory.FINANCIAL_NEWS,
+      includeMetrics:
+        intent === IntentCategory.FINANCIAL_METRICS ||
+        intent === IntentCategory.MARKET_INFORMATION,
+      includeNews:
+        intent === IntentCategory.FINANCIAL_NEWS ||
+        intent === IntentCategory.MARKET_INFORMATION,
     };
 
     const finContext = await this.financeService.getFinancialContext(targetQuery, options);
