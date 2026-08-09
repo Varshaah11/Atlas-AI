@@ -44,20 +44,19 @@ describe('DocumentIngestionService', () => {
   });
 
   afterEach(async () => {
-    if (prisma) {
-      await prisma.documentChunk.deleteMany({});
-      await prisma.document.deleteMany({});
-      if (testUserId) {
-        await prisma.user.delete({ where: { id: testUserId } });
-        testUserId = undefined;
-      }
+    if (prisma && testUserId) {
+      await prisma.documentChunk.deleteMany({ where: { document: { userId: testUserId } } });
+      await prisma.document.deleteMany({ where: { userId: testUserId } });
+      await prisma.user.delete({ where: { id: testUserId } }).catch(() => {});
+      testUserId = undefined;
     }
   });
 
   afterAll(async () => {
-    // Clean up test user (cascades delete related documents/chunks)
-    if (prisma) {
-      await prisma.user.deleteMany({ where: { id: testUserId } });
+    if (prisma && testUserId) {
+      await prisma.documentChunk.deleteMany({ where: { document: { userId: testUserId } } });
+      await prisma.document.deleteMany({ where: { userId: testUserId } });
+      await prisma.user.delete({ where: { id: testUserId } }).catch(() => {});
     }
   });
 

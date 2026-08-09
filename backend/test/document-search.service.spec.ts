@@ -42,10 +42,16 @@ describe('DocumentSearchService', () => {
 
   afterEach(async () => {
     if (prisma) {
-      await prisma.documentChunk.deleteMany({});
-      await prisma.document.deleteMany({});
-      if (userAId) await prisma.user.delete({ where: { id: userAId } }).catch(() => {});
-      if (userBId) await prisma.user.delete({ where: { id: userBId } }).catch(() => {});
+      if (userAId) {
+        await prisma.documentChunk.deleteMany({ where: { document: { userId: userAId } } });
+        await prisma.document.deleteMany({ where: { userId: userAId } });
+        await prisma.user.delete({ where: { id: userAId } }).catch(() => {});
+      }
+      if (userBId) {
+        await prisma.documentChunk.deleteMany({ where: { document: { userId: userBId } } });
+        await prisma.document.deleteMany({ where: { userId: userBId } });
+        await prisma.user.delete({ where: { id: userBId } }).catch(() => {});
+      }
     }
   });
 

@@ -6,6 +6,8 @@ export interface EnvironmentVariables {
   GROQ_API_KEY: string;
   GROQ_MODEL: string;
   FINNHUB_API_KEY: string;
+  DOCUMENT_STORAGE_PATH?: string;
+  DOCUMENT_MAX_FILE_SIZE_MB?: string;
 }
 
 export const validateEnv = (config: Record<string, unknown>): EnvironmentVariables => {
@@ -18,6 +20,8 @@ export const validateEnv = (config: Record<string, unknown>): EnvironmentVariabl
   const GROQ_API_KEY = config.GROQ_API_KEY as string;
   const GROQ_MODEL = (config.GROQ_MODEL as string) || 'llama-3.3-70b-versatile';
   const FINNHUB_API_KEY = (config.FINNHUB_API_KEY as string) || '';
+  const DOCUMENT_STORAGE_PATH = (config.DOCUMENT_STORAGE_PATH as string) || './data/documents';
+  const DOCUMENT_MAX_FILE_SIZE_MB = (config.DOCUMENT_MAX_FILE_SIZE_MB as string) || '10';
 
   const missingVars: string[] = [];
 
@@ -59,5 +63,7 @@ export const validateEnv = (config: Record<string, unknown>): EnvironmentVariabl
     GROQ_API_KEY,
     GROQ_MODEL,
     FINNHUB_API_KEY,
+    DOCUMENT_STORAGE_PATH,
+    DOCUMENT_MAX_FILE_SIZE_MB,
   };
 };
