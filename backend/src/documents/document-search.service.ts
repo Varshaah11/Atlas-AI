@@ -92,7 +92,11 @@ export class DocumentSearchService {
         chunkEmbedding = [];
       }
 
-      const score = this.computeCosineSimilarity(queryEmbedding, chunkEmbedding);
+      const cosineScore = this.computeCosineSimilarity(queryEmbedding, chunkEmbedding);
+      const lexicalScore = this.computeLexicalScore(trimmedQuery, chunk.content);
+
+      // Hybrid score: weighted combination of semantic vector similarity and lexical term/phrase matching
+      const score = Math.max(cosineScore, cosineScore * 0.5 + lexicalScore * 0.5);
 
       results.push({
         documentId: chunk.documentId,
@@ -120,6 +124,87 @@ export class DocumentSearchService {
     );
 
     return results.slice(0, topK);
+  }
+
+  /**
+   * Computes lexical keyword / phrase overlap score between query and chunk content.
+   */
+  private computeLexicalScore(query: string, content: string): number {
+    if (!query || !content) return 0;
+
+    const contentLower = content.toLowerCase();
+    const queryLower = query.toLowerCase();
+
+    // Key financial phrases to boost when present in both query and chunk
+    const phrases = [
+      'total assets',
+      'balance sheet',
+      'balance sheets',
+      'total liabilities',
+      'operating income',
+      'net income',
+      'cash and cash equivalents',
+      'artificial intelligence',
+      'business segments',
+    ];
+
+    let phraseScore = 0;
+    for (const phrase of phrases) {
+      if (queryLower.includes(phrase) && contentLower.includes(phrase)) {
+        phraseScore += 0.5;
+      }
+    }
+
+    const stopWords = new Set([
+      'what',
+      'is',
+      'are',
+      'was',
+      'were',
+      'the',
+      'a',
+      'an',
+      'in',
+      'on',
+      'at',
+      'of',
+      'for',
+      'to',
+      'from',
+      'by',
+      'with',
+      'about',
+      'as',
+      'its',
+      'it',
+      'tell',
+      'me',
+      'show',
+      'does',
+      'how',
+      'which',
+      'who',
+      'this',
+      'that',
+      'these',
+      'those',
+    ]);
+
+    const queryTokens = (queryLower.match(/\b[a-z0-9-]+\b/g) || []).filter(
+      (t) => !stopWords.has(t) && t.length > 1,
+    );
+
+    if (queryTokens.length === 0) return Math.min(phraseScore, 1.0);
+
+    let matchCount = 0;
+    for (const token of queryTokens) {
+      if (contentLower.includes(token)) {
+        matchCount++;
+      }
+    }
+
+    const tokenRatio = matchCount / queryTokens.length;
+    return Math.min(tokenRatio * 0.5 + phraseScore, 1.0);
   }
 
   /**

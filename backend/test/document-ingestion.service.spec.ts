@@ -104,7 +104,7 @@ describe('DocumentIngestionService', () => {
     const emptyPdfPath = path.join(fixturesDir, 'empty.pdf');
     await generateSamplePdf(emptyPdfPath, 'Empty', []);
     await expect(service.ingest(testUserId!, emptyPdfPath, 'empty.pdf')).rejects.toThrow(DocumentIngestionError);
-    const docs = await prisma.document.findMany();
+    const docs = await prisma.document.findMany({ where: { userId: testUserId } });
     expect(docs.length).toBe(1);
     expect(docs[0].status).toBe('FAILED');
     const chunks = await prisma.documentChunk.findMany({ where: { documentId: docs[0].id } });
@@ -115,7 +115,8 @@ describe('DocumentIngestionService', () => {
     const badPath = path.join(fixturesDir, 'bad.pdf');
     await fs.promises.writeFile(badPath, 'this is not a pdf');
     await expect(service.ingest(testUserId!, badPath, 'bad.pdf')).rejects.toThrow(DocumentIngestionError);
-    const docs = await prisma.document.findMany();
+    const docs = await prisma.document.findMany({ where: { userId: testUserId } });
+    expect(docs.length).toBe(1);
     expect(docs[0].status).toBe('FAILED');
   });
 
@@ -141,7 +142,7 @@ describe('DocumentIngestionService', () => {
     const failingService = module.get<DocumentIngestionService>(DocumentIngestionService);
 
     await expect(failingService.ingest(testUserId!, pdfPath, 'two-page.pdf')).rejects.toThrow(DocumentIngestionError);
-    const docs = await prisma.document.findMany();
+    const docs = await prisma.document.findMany({ where: { userId: testUserId } });
     expect(docs[0].status).toBe('FAILED');
     const chunks = await prisma.documentChunk.findMany({ where: { documentId: docs[0].id } });
     expect(chunks.length).toBe(0);

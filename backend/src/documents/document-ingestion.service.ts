@@ -160,12 +160,13 @@ export class DocumentIngestionService {
 
   /**
    * Normalise raw extracted text.
-   * Removes control characters, collapses whitespace, trims.
+   * Removes control characters while preserving line breaks for tables and paragraphs.
    */
   private normalize(text: string): string {
     return text
-      .replace(/[\x00-\x1F\x7F]/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replace(/[\x00-\x09\x0B-\x1F\x7F]/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n\s*\n/g, '\n\n')
       .trim();
   }
 }

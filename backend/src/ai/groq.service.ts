@@ -75,6 +75,7 @@ export class GroqService implements ILLMProvider, OnModuleInit {
         messages,
         model: this.modelName,
         temperature: 0.2,
+        max_tokens: 1000,
       });
 
       const executionTimeMs = Date.now() - startTime;
@@ -86,6 +87,58 @@ export class GroqService implements ILLMProvider, OnModuleInit {
       };
     } catch (error: any) {
       const executionTimeMs = Date.now() - startTime;
+
+      const isRateLimit =
+        error?.status === 429 ||
+        error?.statusCode === 429 ||
+        error?.error?.code === 'rate_limit_exceeded' ||
+        /429|rate limit|tokens per day|tpd/i.test(error?.message || '');
+
+      if (isRateLimit) {
+        this.logger.warn(
+          `Groq API rate limit (429) encountered for model ${this.modelName}. Attempting fallback to fast model...`,
+          'GroqService',
+        );
+
+        // Attempt single fallback to fast model (llama-3.1-8b-instant) if primary model rate limited
+        if (this.modelName !== 'llama-3.1-8b-instant') {
+          try {
+            const fallbackMessages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
+              { role: 'system', content: context.systemInstruction },
+            ];
+            for (const content of context.contents) {
+              const role = content.role === 'model' ? 'assistant' : 'user';
+              const textContent = content.parts.map((p) => p.text).join('\n');
+              fallbackMessages.push({ role, content: textContent });
+            }
+
+            const fallbackCompletion = await this.groq.chat.completions.create({
+              messages: fallbackMessages,
+              model: 'llama-3.1-8b-instant',
+              temperature: 0.2,
+              max_tokens: 800,
+            });
+
+            const fallbackText = fallbackCompletion.choices[0]?.message?.content;
+            if (fallbackText) {
+              return {
+                text: fallbackText,
+                executionTimeMs: Date.now() - startTime,
+              };
+            }
+          } catch (fallbackErr: any) {
+            this.logger.warn(
+              `Fallback model llama-3.1-8b-instant also rate limited or failed: ${fallbackErr.message}`,
+              'GroqService',
+            );
+          }
+        }
+
+        return {
+          text: 'The AI analysis service is temporarily rate limited by the LLM provider. Please wait a moment and try again.',
+          executionTimeMs,
+        };
+      }
 
       this.logger.error(
         `Error executing Groq LLM query: ${error.message}`,

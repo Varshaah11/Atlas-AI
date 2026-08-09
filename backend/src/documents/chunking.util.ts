@@ -7,15 +7,15 @@ export interface Chunk {
 /**
  * Chunk each page independently.
  *
- * - chunkSize: approx. 1000 characters per chunk
- * - overlap: approx. 200 characters between successive chunks
- * - prefers word boundaries (trims back to previous space when possible)
+ * - chunkSize: approx. 1200 characters per chunk
+ * - overlap: approx. 250 characters between successive chunks
+ * - prefers line breaks and sentence boundaries (trims back to previous \n or space when possible)
  * - never returns empty chunks
  */
 export function chunkDocument(
   pages: Array<{ pageNumber: number; text: string }>,
-  chunkSize = 1000,
-  overlap = 200,
+  chunkSize = 1200,
+  overlap = 250,
 ): Chunk[] {
   const chunks: Chunk[] = [];
   let globalIndex = 0;
@@ -26,13 +26,15 @@ export function chunkDocument(
     const len = text.length;
     while (start < len) {
       let end = Math.min(start + chunkSize, len);
-      // Prefer to cut at a whitespace boundary if possible (when not at the very end)
+      // Prefer to cut at a newline or whitespace boundary if possible (when not at the very end)
       if (end < len) {
-        while (end > start && text[end] !== ' ') {
-          end--;
+        let bestEnd = end;
+        while (bestEnd > start && text[bestEnd] !== '\n' && text[bestEnd] !== ' ') {
+          bestEnd--;
         }
-        // If we backed up to start, just keep original end to avoid infinite loop
-        if (end === start) end = Math.min(start + chunkSize, len);
+        if (bestEnd > start) {
+          end = bestEnd;
+        }
       }
       const raw = text.slice(start, end).trim();
       if (raw.length > 0) {

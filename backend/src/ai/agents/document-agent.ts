@@ -54,7 +54,7 @@ export class DocumentAgent implements BaseAgent, OnModuleInit {
 
     let searchResults;
     try {
-      searchResults = await this.documentSearchService.search(userId, task.message, 5);
+      searchResults = await this.documentSearchService.search(userId, task.message, 10);
     } catch (err) {
       this.logger.error(`DocumentSearchService failed: ${err}`, undefined, 'DocumentAgent');
       return {
@@ -122,13 +122,8 @@ export class DocumentAgent implements BaseAgent, OnModuleInit {
     const lines: string[] = [];
     lines.push('[RETRIEVED DOCUMENT CONTEXT]');
     chunks.forEach((chunk, idx) => {
-      lines.push(`Chunk ${idx + 1}:`);
-      lines.push(`  - Document ID: ${chunk.documentId}`);
-      lines.push(`  - Filename: ${chunk.filename}`);
-      lines.push(`  - Page Number: ${chunk.pageNumber}`);
-      lines.push(`  - Chunk Index: ${chunk.chunkIndex}`);
-      lines.push(`  - Similarity Score: ${chunk.score.toFixed(4)}`);
-      lines.push(`  - Content: ${chunk.content}`);
+      lines.push(`Segment ${idx + 1} (Document: ${chunk.filename}, Page ${chunk.pageNumber}):`);
+      lines.push(chunk.content);
       lines.push('');
     });
     return lines.join('\n').trim();

@@ -135,7 +135,7 @@ describe('DocumentAgent', () => {
     expect(result.output).toContain('report.pdf');
     expect(result.output).toContain('Q3 Revenue was $50 Million.');
     expect(result.metadata?.documentIds).toEqual(['doc-123']);
-    expect(documentSearchService.search).toHaveBeenCalledWith('user-1', 'What was the Q3 revenue in the report?', 5);
+    expect(documentSearchService.search).toHaveBeenCalledWith('user-1', 'What was the Q3 revenue in the report?', 10);
   });
 
   it('no matching chunks produces the "couldn\'t find" response', async () => {
@@ -171,7 +171,7 @@ describe('DocumentAgent', () => {
     };
 
     await documentAgent.execute(context);
-    expect(documentSearchService.search).toHaveBeenCalledWith('isolated-user-999', expect.any(String), 5);
+    expect(documentSearchService.search).toHaveBeenCalledWith('isolated-user-999', expect.any(String), 10);
   });
 
   it('handles search failure gracefully', async () => {

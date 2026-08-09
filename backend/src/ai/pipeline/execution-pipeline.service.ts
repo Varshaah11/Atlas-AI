@@ -213,7 +213,7 @@ export class ExecutionPipelineService {
         };
       }
 
-      let fullUserPrompt = `${task.message}\n\n${agentResult.output}\n\nINSTRUCTION: Answer the user's question using ONLY the [RETRIEVED DOCUMENT CONTEXT] provided above. If the retrieved context does not contain the answer to the question, respond ONLY with: "I couldn't find that information in the uploaded document." Do not use external or general knowledge.`;
+      let fullUserPrompt = `${task.message}\n\n${agentResult.output}\n\nINSTRUCTION: Answer the user's question using ONLY the [RETRIEVED DOCUMENT CONTEXT] provided above. Be concise and direct for simple factual questions (e.g., state figures directly). Provide detailed explanations only when explicitly asked for summaries or in-depth analysis. If the retrieved context does not contain the answer to the question, respond ONLY with: "I couldn't find that information in the uploaded document." Do not use external or general knowledge.`;
       if (memoryPrompt) {
         fullUserPrompt += `\n\n${memoryPrompt}`;
       }
@@ -222,6 +222,7 @@ export class ExecutionPipelineService {
         conversationHistory,
         fullUserPrompt,
         DOCUMENT_QUERY_SYSTEM_PROMPT,
+        3,
       );
 
       this.logger.log(

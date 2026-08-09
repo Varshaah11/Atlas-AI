@@ -70,7 +70,24 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 6. SEC Filings: 10-K, 10-Q, 8-K, sec filing, edgar, accession number
+    // 6. Document Content Queries (placed before SEC_FILINGS & FINANCIAL_METRICS for document & financial report queries)
+    if (
+      /\b(document|pdf|file|transcript|prospectus|uploaded|balance sheet|balance sheets|total assets|total liabilities|cash flows|operating income|net income|business segments|business segment|in its 10-k|in the 10-k|in 10-k|this 10-k|its 10-k|in document|from document)\b/i.test(
+        text,
+      ) ||
+      (/\b(describe|explain|summarize|summary|what does|according to)\b/i.test(text) &&
+        /\b(10-k|10k|10-q|10q|8-k|8k|report)\b/i.test(text)) ||
+      (/\b(revenue|operating income|segments|fiscal year)\b/i.test(text) &&
+        /\b(fiscal|fiscal year|fy25|fy2025|2025|segments|three main|main business)\b/i.test(text))
+    ) {
+      return {
+        category: IntentCategory.DOCUMENT_QUERY,
+        confidence: 0.95,
+        reasoning: 'Matched document query or financial statement pattern',
+      };
+    }
+
+    // 7. SEC Filings: 10-K, 10-Q, 8-K, sec filing, edgar, accession number
     if (
       /\b(sec|edgar|10-k|10k|10-q|10q|8-k|8k|filing|filings|accession number|accession)\b/i.test(
         text,
@@ -83,7 +100,7 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 7. Watchlist
+    // 8. Watchlist
     if (/\b(watchlist|track list|monitored stocks)\b/i.test(text)) {
       return {
         category: IntentCategory.WATCHLIST,
@@ -92,21 +109,12 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 8. Alert
+    // 9. Alert
     if (/\b(alert|notify|trigger|price target)\b/i.test(text)) {
       return {
         category: IntentCategory.ALERT,
         confidence: 0.85,
         reasoning: 'Matched alert keywords',
-      };
-    }
-
-    // 9. Document
-    if (/\b(document|pdf|file|transcript|prospectus)\b/i.test(text)) {
-      return {
-        category: IntentCategory.DOCUMENT_QUERY,
-        confidence: 0.85,
-        reasoning: 'Matched document query keywords',
       };
     }
 
