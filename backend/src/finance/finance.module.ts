@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
+import { FinanceController } from './finance.controller';
 import { FinanceService } from './finance.service';
 import { FINANCE_PROVIDER_TOKEN } from './interfaces/finance-provider.interface';
 import { SEC_EDGAR_PROVIDER_TOKEN } from './interfaces/sec-edgar.interface';
 import { FinnhubProvider } from './providers/finnhub.provider';
 import { SecEdgarProvider } from './providers/sec-edgar.provider';
 import { AppLogger } from '@/common/logger/logger.service';
+import { UsersModule } from '@/users/users.module';
 
 @Module({
+  imports: [UsersModule],
+  controllers: [FinanceController],
   providers: [
     AppLogger,
     FinnhubProvider,
