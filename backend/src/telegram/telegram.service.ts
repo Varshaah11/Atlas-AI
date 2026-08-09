@@ -29,7 +29,7 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
     private readonly documentIngestionService: DocumentIngestionService,
 
     private readonly logger: AppLogger,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap() {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
@@ -133,7 +133,12 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
         messageText,
       });
 
-      await ctx.reply(reply);
+      const formattedReply = reply.replace(/\*\*(.*?)\*\*/gs, '*$1*');
+
+      await ctx.reply(formattedReply, {
+        parse_mode: 'Markdown',
+      });
+
     } catch (error: any) {
       this.logger.error(
         `Error handling Telegram message: ${error.message}`,
