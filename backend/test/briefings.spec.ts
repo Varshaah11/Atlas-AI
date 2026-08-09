@@ -351,4 +351,13 @@ describe('Market Briefings API & Security Suite (Phase 4)', () => {
     const res = await briefingsController.updateConfig({ user: mockUserA }, maliciousBody);
     expect(res.config.userId).toBe(mockUserA.id);
   });
+
+  it('Case E — manual trigger does not modify lastDeliveredAt on ScheduledBriefing', async () => {
+    await briefingsController.updateConfig({ user: mockUserA }, { symbols: ['AAPL'] });
+    prismaMock.scheduledBriefing.update.mockClear();
+
+    await briefingsController.triggerNow({ user: mockUserA });
+
+    expect(prismaMock.scheduledBriefing.update).not.toHaveBeenCalled();
+  });
 });

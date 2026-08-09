@@ -60,7 +60,7 @@ describe('BriefingSchedulerService Unit Tests (Phase 5)', () => {
 
     await briefingSchedulerService.evaluateBriefingSchedules();
 
-    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1');
+    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1', { isScheduled: true });
   });
 
   it('Test 2 — DAILY_MORNING not due is skipped', async () => {
@@ -170,7 +170,7 @@ describe('BriefingSchedulerService Unit Tests (Phase 5)', () => {
 
     await briefingSchedulerService.evaluateBriefingSchedules();
 
-    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1');
+    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1', { isScheduled: true });
   });
 
   it('Test 9 — Telegram failure does not crash scheduler', async () => {
@@ -195,8 +195,8 @@ describe('BriefingSchedulerService Unit Tests (Phase 5)', () => {
 
     await briefingSchedulerService.evaluateBriefingSchedules();
 
-    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1');
-    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-2');
+    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1', { isScheduled: true });
+    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-2', { isScheduled: true });
   });
 
   it('Test 11 — Concurrent scheduler execution is prevented', async () => {
@@ -218,6 +218,58 @@ describe('BriefingSchedulerService Unit Tests (Phase 5)', () => {
 
     await briefingSchedulerService.evaluateBriefingSchedules();
 
-    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1');
+    expect(briefingsServiceMock.triggerNow).toHaveBeenCalledWith('user-1', { isScheduled: true });
+  });
+
+  it('Case A — preferredTime = 12:00, lastDeliveredAt = 11:32 (manual), currentTime = 12:00 => DUE', () => {
+    const config = {
+      id: 'b-a',
+      userId: 'user-a',
+      frequency: BriefingFrequency.DAILY_MORNING,
+      preferredTime: '12:00',
+      enabled: true,
+      lastDeliveredAt: new Date('2026-08-09T11:32:00Z'),
+    };
+    const now = new Date('2026-08-09T12:00:00Z');
+    expect(briefingSchedulerService.isBriefingDue(config as any, now)).toBe(true);
+  });
+
+  it('Case B — preferredTime = 12:00, lastDeliveredAt = 12:00, currentTime = 12:15 => NOT DUE', () => {
+    const config = {
+      id: 'b-b',
+      userId: 'user-b',
+      frequency: BriefingFrequency.DAILY_MORNING,
+      preferredTime: '12:00',
+      enabled: true,
+      lastDeliveredAt: new Date('2026-08-09T12:00:00Z'),
+    };
+    const now = new Date('2026-08-09T12:15:00Z');
+    expect(briefingSchedulerService.isBriefingDue(config as any, now)).toBe(false);
+  });
+
+  it('Case C — preferredTime = 12:00, lastDeliveredAt = null, currentTime = 12:00 => DUE', () => {
+    const config = {
+      id: 'b-c',
+      userId: 'user-c',
+      frequency: BriefingFrequency.DAILY_MORNING,
+      preferredTime: '12:00',
+      enabled: true,
+      lastDeliveredAt: null,
+    };
+    const now = new Date('2026-08-09T12:00:00Z');
+    expect(briefingSchedulerService.isBriefingDue(config as any, now)).toBe(true);
+  });
+
+  it('Case D — preferredTime = 12:00, lastDeliveredAt = yesterday 12:00, currentTime = today 12:00 => DUE', () => {
+    const config = {
+      id: 'b-d',
+      userId: 'user-d',
+      frequency: BriefingFrequency.DAILY_MORNING,
+      preferredTime: '12:00',
+      enabled: true,
+      lastDeliveredAt: new Date('2026-08-08T12:00:00Z'),
+    };
+    const now = new Date('2026-08-09T12:00:00Z');
+    expect(briefingSchedulerService.isBriefingDue(config as any, now)).toBe(true);
   });
 });

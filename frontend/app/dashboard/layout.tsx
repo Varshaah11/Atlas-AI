@@ -17,14 +17,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Market Overview', href: '/dashboard', icon: TrendingUp },
-    { label: 'Financial AI Chat', href: '/dashboard/chat', icon: MessageSquare },
-    { label: 'SEC Filings', href: '/dashboard/sec', icon: FileText },
-    { label: 'Stock Comparison', href: '/dashboard/compare', icon: GitCompare },
-    { label: 'Documents', href: '/dashboard/documents', icon: Files },
-    { label: 'Alerts', href: '/dashboard/alerts', icon: Bell },
-    { label: 'Briefings', href: '/dashboard/briefings', icon: Newspaper },
-    { label: 'System Monitor', href: '/', icon: Activity },
+    { label: 'Market Overview', shortLabel: 'Market', href: '/dashboard', icon: TrendingUp },
+    { label: 'Financial AI Chat', shortLabel: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { label: 'SEC Filings', shortLabel: 'SEC', href: '/dashboard/sec', icon: FileText },
+    { label: 'Stock Comparison', shortLabel: 'Compare', href: '/dashboard/compare', icon: GitCompare },
+    { label: 'Documents', shortLabel: 'Docs', href: '/dashboard/documents', icon: Files },
+    { label: 'Alerts', shortLabel: 'Alerts', href: '/dashboard/alerts', icon: Bell },
+    { label: 'Briefings', shortLabel: 'Briefings', href: '/dashboard/briefings', icon: Newspaper },
+    { label: 'System Monitor', shortLabel: 'Monitor', href: '/dashboard/monitor', icon: Activity },
   ];
 
   return (
@@ -57,14 +57,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center space-x-2 ${
+                    title={item.label}
+                    aria-label={item.label}
+                    className={`px-2.5 py-2 text-xs font-semibold rounded-lg whitespace-nowrap transition-all duration-200 flex items-center space-x-1.5 ${
                       isActive
                         ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
                     }`}
                   >
                     <IconComponent className="h-4 w-4 shrink-0" />
-                    <span>{item.label}</span>
+                    <span>{item.shortLabel}</span>
                   </Link>
                 );
               })}

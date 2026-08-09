@@ -48,12 +48,24 @@ export class BriefingSchedulerService {
 
       for (const config of activeConfigs) {
         try {
+          const formattedCurrent = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}`;
+          this.logger.log(
+            `Checking scheduled briefing for user ${config.userId} (Configured time: ${config.preferredTime || '08:00'} UTC, Current time: ${formattedCurrent} UTC)...`,
+            'BriefingSchedulerService',
+          );
+
           if (this.isBriefingDue(config, now)) {
             this.logger.log(
-              `Briefing due for user ${config.userId} (Frequency: ${config.frequency}). Triggering...`,
+              `Scheduled briefing is due for user ${config.userId} (Frequency: ${config.frequency}). Triggering scheduled briefing...`,
               'BriefingSchedulerService',
             );
-            await this.briefingsService.triggerNow(config.userId);
+            const result = await this.briefingsService.triggerNow(config.userId, {
+              isScheduled: true,
+            });
+            this.logger.log(
+              `Scheduled briefing delivered successfully for user ${config.userId} (Delivered to Telegram: ${result.deliveredToTelegram})`,
+              'BriefingSchedulerService',
+            );
           }
         } catch (err: any) {
           this.logger.error(
@@ -75,55 +87,88 @@ export class BriefingSchedulerService {
   }
 
   public isBriefingDue(config: ScheduledBriefing, now: Date): boolean {
-    if (!config.enabled) return false;
-
-    // Parse preferredTime ("HH:mm") into UTC hour
-    const [targetHourStr] = (config.preferredTime || '08:00').split(':');
-    const targetHour = parseInt(targetHourStr, 10);
-    const currentUtcHour = now.getUTCHours();
-    const currentUtcDay = now.getUTCDay(); // 0 = Sunday, 1 = Monday...
-
-    // 1. Check hour match
-    if (currentUtcHour !== targetHour) {
+    if (!config.enabled) {
+      this.logger.log(
+        `[BriefingSchedulerService] User ${config.userId} | Scheduled briefing is disabled`,
+        'BriefingSchedulerService',
+      );
       return false;
     }
 
-    // 2. Frequency specific day check
-    if (config.frequency === BriefingFrequency.WEEKLY_MONDAY) {
-      if (currentUtcDay !== 1) {
-        // 1 = Monday
+    // Parse preferredTime ("HH:mm") into UTC hour & minute
+    const [targetHourStr, targetMinStr] = (config.preferredTime || '08:00').split(':');
+    const targetHour = parseInt(targetHourStr, 10);
+    const targetMinute = parseInt(targetMinStr || '0', 10);
+
+    const currentUtcHour = now.getUTCHours();
+    const currentUtcMinute = now.getUTCMinutes();
+    const currentUtcDay = now.getUTCDay(); // 0 = Sunday, 1 = Monday...
+
+    // Calculate today's scheduled UTC occurrence datetime
+    const scheduledOccurrence = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        targetHour,
+        targetMinute,
+        0,
+        0,
+      ),
+    );
+
+    const formattedCurrent = `${String(currentUtcHour).padStart(2, '0')}:${String(currentUtcMinute).padStart(2, '0')} UTC`;
+    const formattedLastDelivered = config.lastDeliveredAt
+      ? new Date(config.lastDeliveredAt).toISOString()
+      : 'None';
+    const formattedScheduled = scheduledOccurrence.toISOString();
+
+    // 1. Check hour match
+    if (currentUtcHour !== targetHour) {
+      this.logger.log(
+        `[BriefingSchedulerService] User ${config.userId} | Preferred: ${config.preferredTime} UTC | Current: ${formattedCurrent} | Scheduled window: ${formattedScheduled} | Last delivered: ${formattedLastDelivered} | Due: false | Reason: Current UTC hour (${currentUtcHour}) does not match target hour (${targetHour})`,
+        'BriefingSchedulerService',
+      );
+      return false;
+    }
+
+    // 2. Check 15-minute slot match
+    const targetSlot = Math.floor(targetMinute / 15) * 15;
+    const currentSlot = Math.floor(currentUtcMinute / 15) * 15;
+
+    if (currentSlot !== targetSlot) {
+      this.logger.log(
+        `[BriefingSchedulerService] User ${config.userId} | Preferred: ${config.preferredTime} UTC | Current: ${formattedCurrent} | Scheduled window: ${formattedScheduled} | Last delivered: ${formattedLastDelivered} | Due: false | Reason: Current 15-minute window (${currentSlot}m) does not match target window (${targetSlot}m)`,
+        'BriefingSchedulerService',
+      );
+      return false;
+    }
+
+    // 3. Day check for weekly Monday frequency
+    if (config.frequency === BriefingFrequency.WEEKLY_MONDAY && currentUtcDay !== 1) {
+      this.logger.log(
+        `[BriefingSchedulerService] User ${config.userId} | Preferred: ${config.preferredTime} UTC | Current: ${formattedCurrent} | Scheduled window: ${formattedScheduled} | Last delivered: ${formattedLastDelivered} | Due: false | Reason: WEEKLY_MONDAY requires Monday (Current UTC day: ${currentUtcDay})`,
+        'BriefingSchedulerService',
+      );
+      return false;
+    }
+
+    // 4. Check if today's scheduled occurrence has already been delivered
+    if (config.lastDeliveredAt) {
+      const lastDeliveredTime = new Date(config.lastDeliveredAt).getTime();
+      if (lastDeliveredTime >= scheduledOccurrence.getTime()) {
+        this.logger.log(
+          `[BriefingSchedulerService] User ${config.userId} | Preferred: ${config.preferredTime} UTC | Current: ${formattedCurrent} | Scheduled window: ${formattedScheduled} | Last delivered: ${formattedLastDelivered} | Due: false | Reason: Scheduled briefing already delivered for today's scheduled window`,
+          'BriefingSchedulerService',
+        );
         return false;
       }
     }
 
-    // 3. Duplicate delivery protection using lastDeliveredAt
-    if (config.lastDeliveredAt) {
-      const lastDelivered = new Date(config.lastDeliveredAt);
-
-      if (
-        config.frequency === BriefingFrequency.DAILY_MORNING ||
-        config.frequency === BriefingFrequency.DAILY_EVENING
-      ) {
-        // Daily duplicate check: Compare UTC date YYYY-MM-DD
-        const isSameUtcDate =
-          now.getUTCFullYear() === lastDelivered.getUTCFullYear() &&
-          now.getUTCMonth() === lastDelivered.getUTCMonth() &&
-          now.getUTCDate() === lastDelivered.getUTCDate();
-
-        if (isSameUtcDate) {
-          return false; // Already delivered today
-        }
-      } else if (config.frequency === BriefingFrequency.WEEKLY_MONDAY) {
-        // Weekly duplicate check: Within last 6 days
-        const diffMs = now.getTime() - lastDelivered.getTime();
-        const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-        if (diffDays < 6) {
-          return false; // Already delivered this week
-        }
-      }
-    }
-
+    this.logger.log(
+      `[BriefingSchedulerService] User ${config.userId} | Preferred: ${config.preferredTime} UTC | Current: ${formattedCurrent} | Scheduled window: ${formattedScheduled} | Last delivered: ${formattedLastDelivered} | Due: true`,
+      'BriefingSchedulerService',
+    );
     return true;
   }
 }

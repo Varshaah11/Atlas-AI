@@ -106,12 +106,16 @@ export class BriefingsService {
     return updated;
   }
 
-  async triggerNow(userId: string): Promise<{
+  async triggerNow(
+    userId: string,
+    options: { isScheduled?: boolean } = {},
+  ): Promise<{
     success: boolean;
     briefing: string;
     deliveredToTelegram: boolean;
     config: ScheduledBriefing;
   }> {
+    const { isScheduled = false } = options;
     const config = await this.getConfig(userId);
 
     let symbolsToFetch: string[] = config.symbols;
@@ -194,11 +198,13 @@ export class BriefingsService {
       },
     });
 
-    // Update lastDeliveredAt timestamp on config
-    await this.prisma.scheduledBriefing.update({
-      where: { userId },
-      data: { lastDeliveredAt: new Date() },
-    });
+    // Update lastDeliveredAt timestamp on config only if triggered by scheduled execution
+    if (isScheduled) {
+      await this.prisma.scheduledBriefing.update({
+        where: { userId },
+        data: { lastDeliveredAt: new Date() },
+      });
+    }
 
     this.logger.log(
       `Triggered briefing for user ${userId} (Delivered to Telegram: ${deliveredToTelegram})`,
