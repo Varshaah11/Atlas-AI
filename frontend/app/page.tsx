@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import Link from 'next/link';
+
 interface SystemStats {
   totalUsers: number;
   totalConversations: number;
@@ -72,6 +74,12 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
+            <Link
+              href="/dashboard/documents"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition duration-200"
+            >
+              📄 Documents Intelligence
+            </Link>
             <span className="text-xs text-slate-500 font-mono">
               Env:{' '}
               <strong className="text-slate-300">{health?.environment || 'development'}</strong>

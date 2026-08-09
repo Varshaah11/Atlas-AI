@@ -6,9 +6,10 @@ import { DocumentService } from './document.service';
 import { EmbeddingProvider } from './embedding.provider';
 import { PdfExtractorProvider } from './pdf-extractor.provider';
 import { PrismaService } from '@/database/prisma.service';
+import { UsersModule } from '@/users/users.module';
 
 @Module({
-  imports: [],
+  imports: [UsersModule],
   providers: [
     PrismaService,
     DocumentService,

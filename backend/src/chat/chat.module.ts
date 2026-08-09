@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ChatController } from './chat.controller';
 import { ConversationGateway } from './gateways/conversation.gateway';
 import { CHAT_SERVICE_TOKEN } from './interfaces/chat-service.interface';
 import { CONVERSATION_GATEWAY_TOKEN } from './interfaces/conversation-gateway.interface';
@@ -13,6 +14,7 @@ import { UsersModule } from '@/users/users.module';
 
 @Module({
   imports: [UsersModule, AIModule],
+  controllers: [ChatController],
   providers: [
     AppLogger,
     ConversationGateway,
