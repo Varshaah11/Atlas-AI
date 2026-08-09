@@ -16,7 +16,6 @@ out/
 build/
 
 # Prisma
-backend/prisma/migrations/
 
 # Logs
 npm-debug.log*
