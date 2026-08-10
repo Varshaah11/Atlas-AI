@@ -288,18 +288,22 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
     const lines: string[] = [];
     lines.push(`[RETRIEVED FINANCIAL DATA - AUTHORITATIVE SOURCE]`);
     lines.push(`Symbol: ${ctx.symbol}`);
+    lines.push(`Target Ticker Symbol: ${ctx.symbol}`);
+    lines.push(`Header Title: ${ctx.symbol} — Market Snapshot (or ${ctx.symbol} — Market Movement Analysis)`);
     if (ctx.companyName) lines.push(`Company Name: ${ctx.companyName}`);
     if (ctx.profile?.industry) lines.push(`Industry: ${ctx.profile.industry}`);
     if (ctx.profile?.exchange) lines.push(`Exchange: ${ctx.profile.exchange}`);
 
     if (ctx.quote) {
-      const changeSign = ctx.quote.change >= 0 ? '+' : '';
-      const percentSign = ctx.quote.percentChange >= 0 ? '+' : '';
+      const changeSign = ctx.quote.change > 0 ? '+' : ctx.quote.change < 0 ? '-' : '';
+      const formattedAbsChange = Math.abs(ctx.quote.change);
+      const percentSign = ctx.quote.percentChange > 0 ? '+' : ctx.quote.percentChange < 0 ? '-' : '';
+      const formattedAbsPercent = Number(Math.abs(ctx.quote.percentChange).toFixed(2));
       lines.push(`[AUTHORITATIVE PRICE & MOVEMENT DATA]`);
       lines.push(`  - Current Price: $${ctx.quote.currentPrice}`);
       lines.push(`  - Official Previous Close: $${ctx.quote.previousClose}`);
       lines.push(`  - Day Open: $${ctx.quote.open}`);
-      lines.push(`  - Official Day Change: ${changeSign}$${ctx.quote.change} (${percentSign}${ctx.quote.percentChange}% vs Previous Close)`);
+      lines.push(`  - Official Day Change: ${changeSign}$${formattedAbsChange} (${percentSign}${formattedAbsPercent}% vs Previous Close)`);
       lines.push(`  - Day High: $${ctx.quote.high}`);
       lines.push(`  - Day Low: $${ctx.quote.low}`);
     }

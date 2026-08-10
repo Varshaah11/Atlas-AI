@@ -387,4 +387,127 @@ describe('Financial Answer Correctness & Grounding Suite', () => {
     expect(result.output).toContain('The following retrieved news items provide context about [TICKER]\'s recent activity:');
     expect(result.output).not.toContain('The daily price movement ... can be attributed to the following news items');
   });
+
+  it('9. Telegram Display Test 1 — Resolved ticker AI produces AI — Market Snapshot header and never TICKER — Market Snapshot', async () => {
+    mockFinanceService.getFinancialContext = jest.fn().mockImplementation((symbol: string) => {
+      return Promise.resolve({
+        symbol: 'AI',
+        companyName: 'C3.ai Inc',
+        retrievedAt: new Date().toISOString(),
+        source: 'finnhub',
+        quote: { currentPrice: 10.33, previousClose: 10.50, change: -0.17, percentChange: -1.62, open: 10.50, high: 10.60, low: 10.20 },
+        profile: { marketCapitalization: 1550 },
+        metrics: { peRatio: null, fiftyTwoWeekLow: 7.675, fiftyTwoWeekHigh: 23.68 },
+        news: [],
+      });
+    });
+
+    const context: ExecutionContext = {
+      conversationId: 'c1',
+      userId: 'u1',
+      conversationHistory: [],
+      metadata: {},
+      services: { logger: { log: jest.fn(), warn: jest.fn(), error: jest.fn() } as any, config: {} as any },
+      task: {
+        id: 't-ai-display',
+        conversationId: 'c1',
+        userId: 'u1',
+        intent: IntentCategory.FINANCIAL_METRICS,
+        entities: { tickers: ['AI'], companies: [] },
+        message: 'What is the P/E of AI?',
+        needsClarification: false,
+        createdAt: new Date().toISOString(),
+      },
+    };
+
+    const result = await marketAgent.execute(context);
+    expect(result.success).toBe(true);
+    expect(result.output).toContain('AI — Market Snapshot');
+    expect(result.output).not.toContain('TICKER — Market Snapshot');
+    expect(ATLAS_SYSTEM_PROMPT).toContain('MANDATORY MARKET RESPONSE FORMAT (CONCISE SNAPSHOT)');
+    expect(ATLAS_SYSTEM_PROMPT).not.toContain('Header: TICKER — Market Snapshot');
+  });
+
+  it('10. Telegram Display Test 2 — STOCK_PRICE requires mandatory snapshot structure and forbids generic fallback', () => {
+    expect(ATLAS_SYSTEM_PROMPT).toContain('MANDATORY MARKET RESPONSE FORMAT (CONCISE SNAPSHOT)');
+    expect(ATLAS_SYSTEM_PROMPT).toContain('Do NOT fall back to a generic sentence like "Based on the retrieved financial data, the price of AMD is..."');
+  });
+
+  it('11. Telegram Display Test 3 — Movement formatting formats negative dollar change as -$X and never $-X', async () => {
+    mockFinanceService.getFinancialContext = jest.fn().mockImplementation((symbol: string) => {
+      return Promise.resolve({
+        symbol: 'AMD',
+        companyName: 'Advanced Micro Devices Inc',
+        retrievedAt: new Date().toISOString(),
+        source: 'finnhub',
+        quote: { currentPrice: 145.90, previousClose: 151.50, change: -5.60, percentChange: -3.70, open: 150.00, high: 152.00, low: 145.00 },
+        profile: { marketCapitalization: 150000 },
+        metrics: { peRatio: 38.5, fiftyTwoWeekLow: 110, fiftyTwoWeekHigh: 180 },
+        news: [],
+      });
+    });
+
+    const context: ExecutionContext = {
+      conversationId: 'c1',
+      userId: 'u1',
+      conversationHistory: [],
+      metadata: {},
+      services: { logger: { log: jest.fn(), warn: jest.fn(), error: jest.fn() } as any, config: {} as any },
+      task: {
+        id: 't-neg-move',
+        conversationId: 'c1',
+        userId: 'u1',
+        intent: IntentCategory.FINANCIAL_NEWS,
+        entities: { tickers: ['AMD'], companies: [] },
+        message: 'Why did it move?',
+        needsClarification: false,
+        createdAt: new Date().toISOString(),
+      },
+    };
+
+    const result = await marketAgent.execute(context);
+    expect(result.success).toBe(true);
+    expect(result.output).toContain('Official Previous Close');
+    expect(result.output).toContain('Official Day Change');
+    expect(result.output).toContain('-$5.6 (-3.7% vs Previous Close)');
+    expect(result.output).not.toContain('$-5.6');
+    expect(ATLAS_SYSTEM_PROMPT).toContain('ALWAYS place the minus sign "-" BEFORE the dollar sign "$"');
+  });
+
+  it('12. Telegram Display Test 4 — Positive movement formatting uses +$X (+X%)', async () => {
+    mockFinanceService.getFinancialContext = jest.fn().mockImplementation((symbol: string) => {
+      return Promise.resolve({
+        symbol: 'AAPL',
+        companyName: 'Apple Inc',
+        retrievedAt: new Date().toISOString(),
+        source: 'finnhub',
+        quote: { currentPrice: 228.68, previousClose: 224.55, change: 4.13, percentChange: 1.84, open: 225.00, high: 229.00, low: 224.00 },
+        profile: { marketCapitalization: 3500000 },
+        metrics: { peRatio: 33.2, fiftyTwoWeekLow: 165, fiftyTwoWeekHigh: 237 },
+        news: [],
+      });
+    });
+
+    const context: ExecutionContext = {
+      conversationId: 'c1',
+      userId: 'u1',
+      conversationHistory: [],
+      metadata: {},
+      services: { logger: { log: jest.fn(), warn: jest.fn(), error: jest.fn() } as any, config: {} as any },
+      task: {
+        id: 't-pos-move',
+        conversationId: 'c1',
+        userId: 'u1',
+        intent: IntentCategory.STOCK_PRICE,
+        entities: { tickers: ['AAPL'], companies: [] },
+        message: 'AAPL price',
+        needsClarification: false,
+        createdAt: new Date().toISOString(),
+      },
+    };
+
+    const result = await marketAgent.execute(context);
+    expect(result.success).toBe(true);
+    expect(result.output).toContain('+$4.13 (+1.84% vs Previous Close)');
+  });
 });
