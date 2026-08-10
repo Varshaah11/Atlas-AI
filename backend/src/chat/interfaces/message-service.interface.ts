@@ -2,7 +2,12 @@ import { Message, MessageRole } from '@prisma/client';
 import { ChatMessageContext } from '@/shared/interfaces';
 
 export interface IMessageService {
-  saveMessage(conversationId: string, role: MessageRole, content: string): Promise<Message>;
+  saveMessage(
+    conversationId: string,
+    role: MessageRole,
+    content: string,
+    metadata?: Record<string, any>,
+  ): Promise<Message>;
   getConversationHistory(conversationId: string, limit?: number): Promise<ChatMessageContext[]>;
 }
 

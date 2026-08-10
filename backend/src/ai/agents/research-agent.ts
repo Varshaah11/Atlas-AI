@@ -51,7 +51,7 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
       return {
         agentName: this.name,
         success: false,
-        output: `I couldn't identify a valid company name or stock ticker for company research or SEC filings. Please specify a company or symbol (e.g., Microsoft or AAPL).`,
+        output: `I couldn't identify a valid company name or stock ticker for company research or SEC filings. Please specify a company or symbol (e.g., Microsoft or NVDA).`,
         executionTimeMs: Date.now() - startTime,
       };
     }
@@ -159,7 +159,9 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
       const EXCLUDED = new Set([
         'TELL', 'ABOUT', 'SHOW', 'ME', 'RESEARCH', 'COMPANY', 'INFO', 'OVERVIEW',
         'WHAT', 'WHATS', 'IS', 'IT', 'THE', 'MOST', 'RECENT', 'FILING', 'DATE',
-        'ACCESSION', 'NUMBER', 'AND', 'FOR', 'OF', 'IN', 'ON', 'AT', 'TO'
+        'ACCESSION', 'NUMBER', 'AND', 'FOR', 'OF', 'IN', 'ON', 'AT', 'TO',
+        'WHY', 'DID', 'MOVE', 'FALL', 'RISE', 'CAUSED', 'THAT', 'ITS', 'HIGH',
+        'VALUATION', 'REVENUE', 'COMPARE', 'VERSUS', 'VS'
       ]);
       for (const raw of rawMatches) {
         const candidate = raw.replace('$', '').trim();
@@ -168,13 +170,16 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
         if (isExplicit) {
           return candidate;
         }
-        if (upper.length > 1 && !EXCLUDED.has(upper)) {
+        if (upper === 'AI') {
+          const isExplicitAi =
+            /\b(ai (stock|stocks|shares?|ticker|quote|price|valuation|metrics|p\/e|pe)|(price|quote|valuation|p\/e|pe|metrics|financials) (of|for|on) ai|c3\.?ai)\b/i.test(message);
+          if (isExplicitAi) return candidate;
+        } else if (upper.length > 1 && !EXCLUDED.has(upper)) {
           return candidate;
         }
       }
     }
-    const match = message.match(/\b([a-zA-Z0-9\s]{2,20})\b/);
-    return match ? match[1].trim() : null;
+    return null;
   }
 
   private formatSecOnlyContext(secFilings: any, targetQuery: string): string {
@@ -186,7 +191,7 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
     lines.push(`Total Retrieved Filings: ${secFilings.recentFilings.length}`);
     lines.push(``);
 
-    secFilings.recentFilings.forEach((filing: any, index: number) => {
+    secFilings.recentFilings.slice(0, 4).forEach((filing: any, index: number) => {
       lines.push(`Filing ${index + 1}:`);
       lines.push(`  - Form: ${filing.form}`);
       lines.push(`  - Filing Date: ${filing.filingDate}`);
@@ -200,6 +205,21 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
     return lines.join('\n');
   }
 
+  private formatMarketCap(valueInMillions: number | undefined | null): string {
+    if (typeof valueInMillions !== 'number' || isNaN(valueInMillions) || valueInMillions <= 0) {
+      return 'N/A';
+    }
+    if (valueInMillions >= 1_000_000) {
+      const trillionVal = (valueInMillions / 1_000_000).toFixed(3).replace(/\.?0+$/, '');
+      return `$${trillionVal} Trillion ($${valueInMillions.toLocaleString()} Million USD)`;
+    }
+    if (valueInMillions >= 1_000) {
+      const billionVal = (valueInMillions / 1_000).toFixed(2);
+      return `$${billionVal} Billion ($${valueInMillions.toLocaleString()} Million USD)`;
+    }
+    return `$${valueInMillions.toFixed(2)} Million USD`;
+  }
+
   private formatResearchContext(ctx: FinancialContext): string {
     const lines: string[] = [];
     lines.push(`[RETRIEVED AUTHORITATIVE COMPANY RESEARCH CONTEXT]`);
@@ -210,25 +230,30 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
     if (ctx.profile?.country) lines.push(`Country: ${ctx.profile.country}`);
 
     if (ctx.quote) {
-      lines.push(`Current Price: $${ctx.quote.currentPrice}`);
-      lines.push(`Daily Change: $${ctx.quote.change} (${ctx.quote.percentChange}%)`);
-      lines.push(`Day High / Low: $${ctx.quote.high} / $${ctx.quote.low}`);
+      const changeSign = ctx.quote.change >= 0 ? '+' : '';
+      const percentSign = ctx.quote.percentChange >= 0 ? '+' : '';
+      lines.push(`[AUTHORITATIVE PRICE & MOVEMENT DATA]`);
+      lines.push(`  - Current Price: $${ctx.quote.currentPrice}`);
+      lines.push(`  - Official Previous Close: $${ctx.quote.previousClose}`);
+      lines.push(`  - Official Day Change: ${changeSign}$${ctx.quote.change} (${percentSign}${ctx.quote.percentChange}% vs Previous Close)`);
+      lines.push(`  - Day High / Low: $${ctx.quote.high} / $${ctx.quote.low}`);
     }
 
-    if (ctx.metrics) {
-      lines.push(`Financial Metrics:`);
-      if (ctx.metrics.marketCap !== undefined)
-        lines.push(`  - Market Cap: $${ctx.metrics.marketCap}M`);
-      if (ctx.metrics.peRatio !== undefined) lines.push(`  - P/E Ratio: ${ctx.metrics.peRatio}`);
-      if (ctx.metrics.fiftyTwoWeekHigh !== undefined)
-        lines.push(`  - 52-Week High: $${ctx.metrics.fiftyTwoWeekHigh}`);
-      if (ctx.metrics.fiftyTwoWeekLow !== undefined)
-        lines.push(`  - 52-Week Low: $${ctx.metrics.fiftyTwoWeekLow}`);
+    const rawCap = ctx.profile?.marketCapitalization ?? ctx.metrics?.marketCap;
+    lines.push(`[AUTHORITATIVE FINANCIAL METRICS]`);
+    if (rawCap !== undefined && rawCap !== null) {
+      lines.push(`  - Market Cap: ${this.formatMarketCap(rawCap)}`);
+    }
+    if (ctx.metrics?.peRatio !== undefined && ctx.metrics?.peRatio !== null) {
+      lines.push(`  - P/E Ratio: ${ctx.metrics.peRatio}`);
+    }
+    if (ctx.metrics?.fiftyTwoWeekHigh !== undefined && ctx.metrics?.fiftyTwoWeekLow !== undefined) {
+      lines.push(`  - 52-Week Range: $${ctx.metrics.fiftyTwoWeekLow} - $${ctx.metrics.fiftyTwoWeekHigh}`);
     }
 
     if (ctx.news && ctx.news.length > 0) {
       lines.push(`Recent Relevant Company News:`);
-      ctx.news.forEach((item, index) => {
+      ctx.news.slice(0, 3).forEach((item, index) => {
         lines.push(`  ${index + 1}. ${item.headline} (${item.source || 'News'})`);
         if (item.summary) lines.push(`     Summary: ${item.summary.slice(0, 150)}...`);
       });
@@ -237,7 +262,7 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
     if (ctx.secFilings && ctx.secFilings.recentFilings && ctx.secFilings.recentFilings.length > 0) {
       lines.push(`[RETRIEVED SEC EDGAR OFFICIAL FILINGS]`);
       lines.push(`CIK: ${ctx.secFilings.cik}`);
-      ctx.secFilings.recentFilings.forEach((filing, index) => {
+      ctx.secFilings.recentFilings.slice(0, 4).forEach((filing, index) => {
         lines.push(
           `  ${index + 1}. Form ${filing.form} | Date: ${filing.filingDate} | Accession: ${filing.accessionNumber}`,
         );

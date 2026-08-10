@@ -35,20 +35,33 @@ export class EntityExtractorService {
         'CAGR', 'YTD', 'TTM', 'USD', 'FY', 'Q1', 'Q2', 'Q3', 'Q4', 'BUY',
         'SELL', 'HOLD', 'ALL', 'TOP', 'GET', 'CAN', 'HAS', 'HAD', 'NOT',
         'BUT', 'OUT', 'OUR', 'NEW', 'NEWS', 'NOW', 'WHY', 'DID', 'MOVE',
-        'PRICE', 'STOCK', 'STOCKS', 'VALUE', 'INFO', 'OVERVIEW', 'RATIO',
+        'MOVED', 'PRICE', 'STOCK', 'STOCKS', 'VALUE', 'INFO', 'OVERVIEW', 'RATIO',
         'COMPANY', 'RESEARCH', 'COMPARE', 'VERSUS', 'SIDE', 'BY', 'SIDE',
         'CURRENT', 'LATEST', 'MARKET', 'DATA', 'DETAILS', 'FINANCIAL',
-        'FINANCIALS', 'METRICS', 'ABOUT', 'LIKE', 'SOME', 'WITH', 'FROM'
+        'FINANCIALS', 'METRICS', 'ABOUT', 'LIKE', 'SOME', 'WITH', 'FROM',
+        'ITS', 'THAT', 'THIS', 'RISE', 'FALL', 'FALLEN', 'DROPPED', 'HIGH',
+        'LOW', 'VALUATION', 'REVENUE', 'CAUSE', 'CAUSED', 'VS', 'CHANGE',
+        'OPEN', 'CLOSE', 'DAILY', 'PREVIOUS', 'SNAPSHOT', 'SYMBOL', 'NAME',
+        'INDUSTRY', 'EXCHANGE', 'URL', 'SOURCE', 'TIMESTAMP', 'AUTHORITATIVE'
       ]);
 
       for (const raw of tickerMatches) {
         const symbol = raw.replace('$', '');
         const isExplicitDollar = raw.startsWith('$');
 
-        if (isExplicitDollar) {
+        if (isExplicitDollar && /[A-Za-z]/.test(symbol)) {
           tickers.add(symbol);
-        } else if (symbol.length > 1 && !EXCLUDED_TOKENS.has(symbol)) {
-          tickers.add(symbol);
+        } else if (symbol.length > 1 && !EXCLUDED_TOKENS.has(symbol) && !/^\d+$/.test(symbol)) {
+          if (symbol === 'AI') {
+            // Require explicit financial ticker context before treating ambiguous "AI" as stock symbol C3.ai
+            const isExplicitAiTicker =
+              /\b(ai (stock|stocks|shares?|ticker|quote|price|valuation|metrics|p\/e|pe)|(price|quote|valuation|p\/e|pe|metrics|financials) (of|for|on) ai|c3\.?ai)\b/i.test(text);
+            if (isExplicitAiTicker) {
+              tickers.add(symbol);
+            }
+          } else {
+            tickers.add(symbol);
+          }
         }
       }
     }

@@ -13,4 +13,5 @@ export interface ProcessMessageDto {
 export interface ChatMessageContext {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  metadata?: Record<string, any>;
 }

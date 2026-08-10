@@ -10,6 +10,8 @@ import { ConversationAgentService } from './conversation/conversation-agent.serv
 import { EntityExtractorService } from './conversation/entity-extractor.service';
 import { INTENT_CLASSIFIER_TOKEN } from './conversation/intent-classifier.interface';
 import { RuleBasedIntentClassifier } from './conversation/rule-based-intent-classifier.service';
+import { CerebrasService } from './cerebras.service';
+import { FallbackLLMProvider } from './fallback-llm.provider';
 import { GroqService } from './groq.service';
 import { LLM_PROVIDER_TOKEN } from './interfaces/llm-provider.interface';
 import { AIOrchestratorService } from './orchestrator/orchestrator.service';
@@ -24,6 +26,8 @@ import { MemoryModule } from '@/memory/memory.module';
   providers: [
     AppLogger,
     GroqService,
+    CerebrasService,
+    FallbackLLMProvider,
     ContextBuilderService,
     EntityExtractorService,
     ClarificationService,
@@ -37,7 +41,7 @@ import { MemoryModule } from '@/memory/memory.module';
     RuleBasedIntentClassifier,
     {
       provide: LLM_PROVIDER_TOKEN,
-      useExisting: GroqService,
+      useClass: FallbackLLMProvider,
     },
     {
       provide: CONTEXT_BUILDER_TOKEN,

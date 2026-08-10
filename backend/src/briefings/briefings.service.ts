@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { BriefingFrequency, NotificationLog, ScheduledBriefing } from '@prisma/client';
 import { UpdateBriefingConfigDto } from './dto/update-briefing-config.dto';
-import { GroqService } from '@/ai/groq.service';
+import { ILLMProvider, LLM_PROVIDER_TOKEN } from '@/ai/interfaces/llm-provider.interface';
 import { MARKET_BRIEFING_SYSTEM_PROMPT } from '@/ai/prompts/atlas-system.prompt';
 import { AppLogger } from '@/common/logger/logger.service';
 import { PrismaService } from '@/database/prisma.service';
@@ -16,7 +16,7 @@ export class BriefingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly financeService: FinanceService,
-    private readonly groqService: GroqService,
+    @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: ILLMProvider,
     private readonly telegramService: TelegramService,
     @Inject(USER_SERVICE_TOKEN) private readonly userService: IUserService,
     private readonly logger: AppLogger,
@@ -152,7 +152,7 @@ export class BriefingsService {
     const contextPayload = JSON.stringify(contextResults, null, 2);
     const userPrompt = `Generate a comprehensive executive market briefing for the following tracked companies:\n\n[RELEVANT FINANCIAL CONTEXT]:\n${contextPayload}`;
 
-    const llmResponse = await this.groqService.generateResponse({
+    const llmResponse = await this.llmProvider.generateResponse({
       systemInstruction: MARKET_BRIEFING_SYSTEM_PROMPT,
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       messageCount: 1,

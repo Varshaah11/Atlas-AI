@@ -13,10 +13,11 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
 
     // 1. General conversation greetings & basic prompts (must NEVER call Finnhub)
     if (
+      /^\/?start\b/i.test(text) ||
       /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|how's it going|what's up|who are you|what can you do|help)\b/i.test(
         text,
       ) ||
-      /^(hi|hello|hey|thanks|help|howdy)$/i.test(text)
+      /^(hi|hello|hey|thanks|help|howdy|ok|okay|bye|goodbye)$/i.test(text)
     ) {
       return {
         category: IntentCategory.GENERAL_CHAT,
@@ -34,16 +35,19 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 3. Financial News: What is the latest news about NVIDIA? / NVDA news
+    // 3. Financial News & Market Movement: What is the latest news about NVIDIA? / Why did it move?
     if (
       /\b(news|latest news|headline|headlines|article|articles|press release|market news|company news)\b/i.test(
+        text,
+      ) ||
+      /\b(why did (it|the stock|the price|that)|what caused (that|it|the move|the drop|the rise|the fall)|why (did|has) (it|the price|the stock) (move|moving|moved|fall|fallen|drop|dropped|rise|risen|gain|gained|plummet|soar|dip|dipped|crash))\b/i.test(
         text,
       )
     ) {
       return {
         category: IntentCategory.FINANCIAL_NEWS,
         confidence: 0.9,
-        reasoning: 'Matched financial news keywords',
+        reasoning: 'Matched financial news or market movement query pattern',
       };
     }
 

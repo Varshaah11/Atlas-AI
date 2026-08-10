@@ -13,12 +13,18 @@ export class MessageService implements IMessageService {
     private readonly logger: AppLogger,
   ) {}
 
-  async saveMessage(conversationId: string, role: MessageRole, content: string): Promise<Message> {
+  async saveMessage(
+    conversationId: string,
+    role: MessageRole,
+    content: string,
+    metadata?: Record<string, any>,
+  ): Promise<Message> {
     const message = await this.prisma.message.create({
       data: {
         conversationId,
         role,
         content,
+        metadata: metadata ? (metadata as any) : undefined,
       },
     });
 
@@ -36,15 +42,17 @@ export class MessageService implements IMessageService {
   ): Promise<ChatMessageContext[]> {
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: limit,
     });
 
     return messages
+      .reverse()
       .filter((m) => m.role === MessageRole.USER || m.role === MessageRole.ASSISTANT)
       .map((m) => ({
         role: m.role === MessageRole.USER ? 'user' : 'assistant',
         content: m.content,
+        metadata: m.metadata as Record<string, any> | undefined,
       }));
   }
 }

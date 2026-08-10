@@ -67,21 +67,15 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
       return {
         agentName: this.name,
         success: false,
-        output: `I couldn't identify a valid company name or stock ticker from your request. Please specify a ticker or company (e.g., AAPL or Microsoft).`,
+        output: `I couldn't identify a valid company name or stock ticker from your request. Please specify a ticker or company (e.g., NVDA or Microsoft).`,
         executionTimeMs: Date.now() - startTime,
       };
     }
 
     const options = {
-      includeQuote:
-        intent === IntentCategory.STOCK_PRICE ||
-        intent === IntentCategory.FINANCIAL_METRICS ||
-        intent === IntentCategory.COMPANY_RESEARCH ||
-        intent === IntentCategory.MARKET_INFORMATION,
+      includeQuote: true,
       includeProfile: true,
-      includeMetrics:
-        intent === IntentCategory.FINANCIAL_METRICS ||
-        intent === IntentCategory.MARKET_INFORMATION,
+      includeMetrics: true,
       includeNews:
         intent === IntentCategory.FINANCIAL_NEWS ||
         intent === IntentCategory.MARKET_INFORMATION,
@@ -145,11 +139,100 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
       ),
     );
 
+    const comparisonFacts = this.buildComparisonFacts(contexts);
+
     const formattedContexts = contexts
       .map((ctx) => this.formatMarketContext(ctx))
       .join('\n\n---\n\n');
 
-    return `[RETRIEVED FINANCIAL DATA - AUTHORITATIVE SOURCE FOR COMPARISON]\n\n${formattedContexts}`;
+    return `[RETRIEVED FINANCIAL DATA - AUTHORITATIVE SOURCE FOR COMPARISON]\n\n${comparisonFacts}\n\n---\n\n${formattedContexts}`;
+  }
+
+  private buildComparisonFacts(contexts: FinancialContext[]): string {
+    const validContexts = contexts.filter((c) => !c.error && c.symbol);
+    if (validContexts.length < 2) return '';
+
+    const lines: string[] = [];
+    lines.push(`[COMPARISON SUMMARY & MATHEMATICAL FACTS - AUTHORITATIVE & UNCOMPROMISING]`);
+    lines.push(`Note for LLM: Use these exact mathematical facts when comparing. Never invert or contradict these relations.`);
+
+    // 1. Market Capitalization Comparison
+    const caps = validContexts
+      .map((c) => ({
+        symbol: c.symbol,
+        name: c.companyName || c.symbol,
+        rawMillion: c.profile?.marketCapitalization ?? c.metrics?.marketCap ?? null,
+      }))
+      .filter((item): item is { symbol: string; name: string; rawMillion: number } => typeof item.rawMillion === 'number' && !isNaN(item.rawMillion) && item.rawMillion > 0);
+
+    if (caps.length >= 2) {
+      lines.push(``);
+      lines.push(`Metric: Market Capitalization`);
+      caps.forEach((c) => {
+        lines.push(`  - ${c.symbol}: Raw Value = ${c.rawMillion.toLocaleString()} Million USD | Display Value = ${this.formatMarketCap(c.rawMillion)}`);
+      });
+
+      const sortedCaps = [...caps].sort((a, b) => b.rawMillion - a.rawMillion);
+      const largest = sortedCaps[0];
+      const smallest = sortedCaps[sortedCaps.length - 1];
+
+      if (largest.rawMillion > smallest.rawMillion) {
+        lines.push(`  Mathematical Fact: ${largest.symbol} (${this.formatMarketCap(largest.rawMillion)}) HAS A LARGER MARKET CAPITALIZATION THAN ${smallest.symbol} (${this.formatMarketCap(smallest.rawMillion)}).`);
+        lines.push(`  Mathematical Relation: ${sortedCaps.map((c) => `${c.symbol} (${this.formatMarketCap(c.rawMillion)})`).join(' > ')}`);
+      } else {
+        lines.push(`  Mathematical Fact: ${caps.map((c) => c.symbol).join(' and ')} have equal market capitalization.`);
+      }
+    }
+
+    // 2. Valuation (P/E Ratio) Comparison
+    const pes = validContexts
+      .map((c) => ({
+        symbol: c.symbol,
+        pe: c.metrics?.peRatio ?? null,
+      }))
+      .filter((item): item is { symbol: string; pe: number } => typeof item.pe === 'number' && !isNaN(item.pe) && item.pe > 0);
+
+    if (pes.length >= 2) {
+      lines.push(``);
+      lines.push(`Metric: Price-to-Earnings (P/E) Ratio`);
+      pes.forEach((p) => {
+        lines.push(`  - ${p.symbol}: P/E = ${p.pe}`);
+      });
+
+      const sortedPEs = [...pes].sort((a, b) => b.pe - a.pe);
+      const highestPE = sortedPEs[0];
+      const lowestPE = sortedPEs[sortedPEs.length - 1];
+
+      if (highestPE.pe > lowestPE.pe) {
+        lines.push(`  Mathematical Fact: ${highestPE.symbol} (P/E ${highestPE.pe}) TRADES AT A HIGHER P/E MULTIPLE THAN ${lowestPE.symbol} (P/E ${lowestPE.pe}). ${lowestPE.symbol} HAS THE LOWER P/E RATIO.`);
+        lines.push(`  Mathematical Relation: ${sortedPEs.map((p) => `${p.symbol} (${p.pe})`).join(' > ')}`);
+      } else {
+        lines.push(`  Mathematical Fact: ${pes.map((p) => p.symbol).join(' and ')} have equal P/E ratios.`);
+      }
+    }
+
+    // 3. Current Share Price Comparison
+    const prices = validContexts
+      .map((c) => ({
+        symbol: c.symbol,
+        price: c.quote?.currentPrice ?? null,
+      }))
+      .filter((item): item is { symbol: string; price: number } => typeof item.price === 'number' && !isNaN(item.price));
+
+    if (prices.length >= 2) {
+      lines.push(``);
+      lines.push(`Metric: Share Price`);
+      prices.forEach((p) => {
+        lines.push(`  - ${p.symbol}: Current Price = $${p.price}`);
+      });
+      const sortedPrices = [...prices].sort((a, b) => b.price - a.price);
+      if (sortedPrices[0].price > sortedPrices[sortedPrices.length - 1].price) {
+        lines.push(`  Mathematical Relation: ${sortedPrices.map((p) => `${p.symbol} ($${p.price})`).join(' > ')}`);
+        lines.push(`  Important Note: A higher nominal share price DOES NOT mean a company has a larger market capitalization or is a better investment.`);
+      }
+    }
+
+    return lines.join('\n');
   }
 
   private extractTargetFromMessage(message: string): string | null {
@@ -159,7 +242,9 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
         'WHAT', 'WHATS', 'TELL', 'SHOW', 'ME', 'IS', 'IT', 'THE', 'AND', 'FOR',
         'OF', 'IN', 'ON', 'AT', 'TO', 'MY', 'WE', 'YOU', 'HE', 'SHE', 'THEY',
         'PRICE', 'STOCK', 'STOCKS', 'VALUE', 'INFO', 'OVERVIEW', 'RATIO',
-        'PE', 'EPS', 'EBITDA', 'NEWS', 'LATEST', 'CURRENT', 'MARKET', 'DATA'
+        'PE', 'EPS', 'EBITDA', 'NEWS', 'LATEST', 'CURRENT', 'MARKET', 'DATA',
+        'WHY', 'DID', 'MOVE', 'FALL', 'RISE', 'CAUSED', 'THAT', 'ITS', 'HIGH',
+        'VALUATION', 'REVENUE', 'COMPARE', 'VERSUS', 'VS'
       ]);
       for (const raw of rawMatches) {
         const candidate = raw.replace('$', '').trim();
@@ -168,14 +253,31 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
         if (isExplicit) {
           return candidate;
         }
-        if (upper.length > 1 && !EXCLUDED.has(upper)) {
+        if (upper === 'AI') {
+          const isExplicitAi =
+            /\b(ai (stock|stocks|shares?|ticker|quote|price|valuation|metrics|p\/e|pe)|(price|quote|valuation|p\/e|pe|metrics|financials) (of|for|on) ai|c3\.?ai)\b/i.test(message);
+          if (isExplicitAi) return candidate;
+        } else if (upper.length > 1 && !EXCLUDED.has(upper)) {
           return candidate;
         }
       }
     }
+    return null;
+  }
 
-    const match = message.match(/\b([a-zA-Z0-9\s]{2,20})\b/);
-    return match ? match[1].trim() : null;
+  private formatMarketCap(valueInMillions: number | undefined | null): string {
+    if (typeof valueInMillions !== 'number' || isNaN(valueInMillions) || valueInMillions <= 0) {
+      return 'N/A';
+    }
+    if (valueInMillions >= 1_000_000) {
+      const trillionVal = (valueInMillions / 1_000_000).toFixed(3).replace(/\.?0+$/, '');
+      return `$${trillionVal} Trillion ($${valueInMillions.toLocaleString()} Million USD)`;
+    }
+    if (valueInMillions >= 1_000) {
+      const billionVal = (valueInMillions / 1_000).toFixed(2);
+      return `$${billionVal} Billion ($${valueInMillions.toLocaleString()} Million USD)`;
+    }
+    return `$${valueInMillions.toFixed(2)} Million USD`;
   }
 
   private formatMarketContext(ctx: FinancialContext): string {
@@ -191,29 +293,41 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
     if (ctx.profile?.exchange) lines.push(`Exchange: ${ctx.profile.exchange}`);
 
     if (ctx.quote) {
-      lines.push(`Current Price: $${ctx.quote.currentPrice}`);
-      lines.push(`Daily Change: $${ctx.quote.change} (${ctx.quote.percentChange}%)`);
-      lines.push(`Day High / Low: $${ctx.quote.high} / $${ctx.quote.low}`);
-      lines.push(`Open / Previous Close: $${ctx.quote.open} / $${ctx.quote.previousClose}`);
+      const changeSign = ctx.quote.change >= 0 ? '+' : '';
+      const percentSign = ctx.quote.percentChange >= 0 ? '+' : '';
+      lines.push(`[AUTHORITATIVE PRICE & MOVEMENT DATA]`);
+      lines.push(`  - Current Price: $${ctx.quote.currentPrice}`);
+      lines.push(`  - Official Previous Close: $${ctx.quote.previousClose}`);
+      lines.push(`  - Day Open: $${ctx.quote.open}`);
+      lines.push(`  - Official Day Change: ${changeSign}$${ctx.quote.change} (${percentSign}${ctx.quote.percentChange}% vs Previous Close)`);
+      lines.push(`  - Day High: $${ctx.quote.high}`);
+      lines.push(`  - Day Low: $${ctx.quote.low}`);
     }
 
-    if (ctx.metrics) {
-      lines.push(`Financial Metrics:`);
-      if (ctx.metrics.marketCap !== undefined)
-        lines.push(`  - Market Cap: $${ctx.metrics.marketCap}M`);
-      if (ctx.metrics.peRatio !== undefined) lines.push(`  - P/E Ratio: ${ctx.metrics.peRatio}`);
-      if (ctx.metrics.fiftyTwoWeekHigh !== undefined)
-        lines.push(`  - 52-Week High: $${ctx.metrics.fiftyTwoWeekHigh}`);
-      if (ctx.metrics.fiftyTwoWeekLow !== undefined)
-        lines.push(`  - 52-Week Low: $${ctx.metrics.fiftyTwoWeekLow}`);
+    const rawCap = ctx.profile?.marketCapitalization ?? ctx.metrics?.marketCap;
+    lines.push(`[AUTHORITATIVE FINANCIAL METRICS]`);
+    if (rawCap !== undefined && rawCap !== null) {
+      lines.push(`  - Market Cap: ${this.formatMarketCap(rawCap)}`);
+    }
+    if (ctx.metrics?.peRatio !== undefined && ctx.metrics?.peRatio !== null) {
+      lines.push(`  - P/E Ratio: ${ctx.metrics.peRatio}`);
+    }
+    if (ctx.metrics?.fiftyTwoWeekHigh !== undefined && ctx.metrics?.fiftyTwoWeekLow !== undefined) {
+      lines.push(`  - 52-Week Range: $${ctx.metrics.fiftyTwoWeekLow} - $${ctx.metrics.fiftyTwoWeekHigh}`);
     }
 
+    lines.push(`[AUTHORITATIVE NEWS CONTEXT - FACTUAL & UNBIASED]`);
+    lines.push(`Note for LLM: Retaining retrieved news items as factual company context. News relevance does NOT establish price-movement causality. Do NOT claim an article caused or contributed to today's movement unless explicit market reaction text is reported in the article. Do NOT use causal opening phrasing such as "The daily price movement of [TICKER] can be attributed to the following news items:". ALWAYS use neutral opening phrasing such as "The following retrieved news items provide context about [TICKER]'s recent activity:".`);
     if (ctx.news && ctx.news.length > 0) {
-      lines.push(`Recent News:`);
-      ctx.news.forEach((item, index) => {
-        lines.push(`  ${index + 1}. ${item.headline} (${item.source || 'News'})`);
-        if (item.summary) lines.push(`     Summary: ${item.summary.slice(0, 150)}...`);
+      ctx.news.slice(0, 3).forEach((item, index) => {
+        const fullText = `${item.headline || ''} ${item.summary || ''}`;
+        const hasExplicitMarketReaction = /\b(shares|stock|price) (rose|surged|jumped|fell|dropped|sank|tumbled|gained|lost|slid|climbed|soared|dipped|reacted|plunged|moved)\b/i.test(fullText);
+        lines.push(`  Article ${index + 1}: ${item.headline} (${item.source || 'News'})`);
+        if (item.summary) lines.push(`    Summary: ${item.summary.slice(0, 150)}...`);
+        lines.push(`    Reported Causality to Today's Movement: ${hasExplicitMarketReaction ? 'EXPLICIT MARKET REACTION REPORTED IN ARTICLE' : 'NOT ESTABLISHED IN ARTICLE (Company/Business Context Only)'}`);
       });
+    } else {
+      lines.push(`  - Recent News: None available in retrieved context.`);
     }
 
     lines.push(`Data Source: Finnhub API | Timestamp: ${ctx.retrievedAt}`);

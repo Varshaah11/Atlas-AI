@@ -17,7 +17,7 @@ export class ClarificationService {
       return {
         needsClarification: true,
         clarificationQuestion:
-          'Which company or stock symbol would you like to research? (e.g., "Tell me about Microsoft" or "AAPL")',
+          'Which company or stock symbol would you like to research? (e.g., "Tell me about Microsoft" or "NVDA")',
       };
     }
 

@@ -13,16 +13,21 @@ export class ContextBuilderService implements IContextBuilderService {
     history: ChatMessageContext[],
     currentPrompt: string,
     systemInstructionOverride?: string,
-    historyWindowLimit = 20,
+    historyWindowLimit = 6,
   ): PreparedLLMContext {
     const systemInstruction = systemInstructionOverride || ATLAS_SYSTEM_PROMPT;
 
     // Enforce sliding window on conversation history
-    const recentHistory = history.slice(-historyWindowLimit);
+    let recentHistory = history.slice(-historyWindowLimit);
+
+    // Prevent user message duplication if history already ends with the current user turn
+    if (recentHistory.length > 0 && recentHistory[recentHistory.length - 1].role === 'user') {
+      recentHistory = recentHistory.slice(0, -1);
+    }
 
     const contents: PreparedContent[] = [];
 
-    // Format history turns for Gemini multi-turn conversation format
+    // Format history turns for LLM multi-turn conversation format
     for (const msg of recentHistory) {
       const role = msg.role === 'assistant' ? 'model' : 'user';
       contents.push({

@@ -6,6 +6,7 @@ import { BriefingsService } from '@/briefings/briefings.service';
 import { PrismaService } from '@/database/prisma.service';
 import { FinanceService } from '@/finance/finance.service';
 import { GroqService } from '@/ai/groq.service';
+import { LLM_PROVIDER_TOKEN } from '@/ai/interfaces/llm-provider.interface';
 import { TelegramService } from '@/telegram/telegram.service';
 import { AppLogger } from '@/common/logger/logger.service';
 import { USER_SERVICE_TOKEN } from '@/users/interfaces/user-service.interface';
@@ -115,6 +116,7 @@ describe('Market Briefings API & Security Suite (Phase 4)', () => {
         { provide: PrismaService, useValue: prismaMock },
         { provide: FinanceService, useValue: financeServiceMock },
         { provide: GroqService, useValue: groqServiceMock },
+        { provide: LLM_PROVIDER_TOKEN, useExisting: GroqService },
         { provide: TelegramService, useValue: telegramServiceMock },
         {
           provide: USER_SERVICE_TOKEN,

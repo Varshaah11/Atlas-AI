@@ -40,13 +40,21 @@ export class ChatService implements IChatService {
     const history = await this.messageService.getConversationHistory(conversation.id);
 
     // 5. Conversation Agent processes message → intent classification, entity extraction, clarification check → builds ConversationTask
-    const task = await this.conversationAgent.processMessageToTask(dto, conversation.id, user.id);
+    const task = await this.conversationAgent.processMessageToTask(
+      dto,
+      conversation.id,
+      user.id,
+      history,
+    );
 
     // 6. AI Orchestrator executes orchestration plan (handles clarification or delegates to ExecutionPipeline)
     const result = await this.aiOrchestrator.orchestrateTask(task, history);
 
     // 7. Save assistant response turn
-    await this.messageService.saveMessage(conversation.id, MessageRole.ASSISTANT, result.output);
+    await this.messageService.saveMessage(conversation.id, MessageRole.ASSISTANT, result.output, {
+      intent: task.intent,
+      entities: task.entities,
+    });
 
     const totalLatencyMs = Date.now() - startTime;
 
