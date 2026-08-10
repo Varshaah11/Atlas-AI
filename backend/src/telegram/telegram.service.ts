@@ -133,11 +133,7 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
         messageText,
       });
 
-      const formattedReply = reply.replace(/\*\*(.*?)\*\*/gs, '*$1*');
-
-      await ctx.reply(formattedReply, {
-        parse_mode: 'Markdown',
-      });
+      await ctx.reply(reply);
 
     } catch (error: any) {
       this.logger.error(
