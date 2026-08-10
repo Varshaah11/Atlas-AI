@@ -303,7 +303,7 @@ export class ExecutionPipelineService {
     }
 
     const fullUserPrompt = memoryPrompt
-      ? `${memoryPrompt}\n\n[CURRENT USER MESSAGE]\n${task.message}`
+      ? `${memoryPrompt}\n\n[CONVERSATIONAL DIRECTIVE]: The preferences above are passive context. Do NOT generate stock analysis, financial reports, risk tolerance assumptions, or ticker recommendations in General Chat. Respond naturally and ask ONE follow-up question.\n\n[CURRENT USER MESSAGE]\n${task.message}`
       : task.message;
 
     const preparedContext = this.contextBuilder.buildContext(
@@ -356,20 +356,26 @@ export class ExecutionPipelineService {
         return;
       }
 
-      const extractionPrompt = `Analyze the user's message and extract durable long-term preferences or facts about the user.
+      const extractionPrompt = `Analyze the user's message and extract ONLY explicitly stated long-term preferences or facts about the user.
+CRITICAL NON-INFERENCE RULES:
+- Do NOT infer or invent investmentStyle ("growth", "conservative", etc.) unless explicitly stated in userMessage. If unstated, set to null.
+- Do NOT infer or invent riskTolerance ("low", "moderate", "high") unless explicitly stated in userMessage. If unstated, set to null.
+- Do NOT invent or infer preferredTickers (e.g. AAPL, MSFT, NVDA) unless explicitly named by symbol/name in userMessage. If unstated, set to [].
+- Extract preferredSectors ONLY if explicitly named by the user in userMessage (e.g. "technology").
+
 Return ONLY a JSON object in this format (no markdown codeblocks, no extra text):
 {
   "preferences": {
-    "investmentStyle": "conservative | growth | aggressive | null",
-    "riskTolerance": "low | moderate | high | null",
-    "preferredSectors": ["sector1"],
-    "preferredTickers": ["TICKER1"]
+    "investmentStyle": null,
+    "riskTolerance": null,
+    "preferredSectors": ["technology"],
+    "preferredTickers": []
   },
   "memories": [
     {
-      "memory": "Durable factual statement about the user",
-      "category": "PREFERENCE | INTEREST | GOAL | PROFILE | FINANCIAL_CONTEXT",
-      "importance": 0.8
+      "memory": "Direct factual statement explicitly stated by user",
+      "category": "PROFILE",
+      "importance": 0.7
     }
   ]
 }
