@@ -154,33 +154,23 @@ export class ResearchAgent implements BaseAgent, OnModuleInit {
   }
 
   private extractTargetFromMessage(message: string): string | null {
-    const tickerMatch = message.match(/\b\$?([A-Za-z0-9]{1,15})\b/);
-    if (tickerMatch) {
-      const candidate = tickerMatch[1].trim();
-      const upper = candidate.toUpperCase();
-      if (
-        ![
-          'TELL',
-          'ABOUT',
-          'SHOW',
-          'ME',
-          'RESEARCH',
-          'COMPANY',
-          'INFO',
-          'OVERVIEW',
-          'WHAT',
-          'WHATS',
-          'IS',
-          'THE',
-          'MOST',
-          'RECENT',
-          'FILING',
-          'DATE',
-          'ACCESSION',
-          'NUMBER',
-        ].includes(upper)
-      ) {
-        return candidate;
+    const rawMatches = message.match(/(\$[A-Za-z0-9]{1,15}|\b[A-Za-z0-9]{1,15}\b)/g);
+    if (rawMatches) {
+      const EXCLUDED = new Set([
+        'TELL', 'ABOUT', 'SHOW', 'ME', 'RESEARCH', 'COMPANY', 'INFO', 'OVERVIEW',
+        'WHAT', 'WHATS', 'IS', 'IT', 'THE', 'MOST', 'RECENT', 'FILING', 'DATE',
+        'ACCESSION', 'NUMBER', 'AND', 'FOR', 'OF', 'IN', 'ON', 'AT', 'TO'
+      ]);
+      for (const raw of rawMatches) {
+        const candidate = raw.replace('$', '').trim();
+        const upper = candidate.toUpperCase();
+        const isExplicit = raw.startsWith('$');
+        if (isExplicit) {
+          return candidate;
+        }
+        if (upper.length > 1 && !EXCLUDED.has(upper)) {
+          return candidate;
+        }
       }
     }
     const match = message.match(/\b([a-zA-Z0-9\s]{2,20})\b/);

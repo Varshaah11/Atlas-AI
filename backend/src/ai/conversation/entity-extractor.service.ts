@@ -25,40 +25,29 @@ export class EntityExtractorService {
     const dates = new Set<string>();
     const requestedActions = new Set<string>();
 
-    // 1. Extract explicit ticker symbols with optional $ prefix (e.g. $AAPL, AAPL, INVALIDTICKERXYZ)
-    const tickerMatches = text.match(/\b\$?([A-Z]{1,12})\b/g);
+    // 1. Extract explicit ticker symbols with optional $ prefix (e.g. $AAPL, AAPL, $P)
+    const tickerMatches = text.match(/(\$[A-Za-z0-9]{1,12}|\b[A-Z]{1,12}\b)/g);
     if (tickerMatches) {
+      const EXCLUDED_TOKENS = new Set([
+        'IN', 'IS', 'IT', 'ON', 'OR', 'US', 'THE', 'AND', 'FOR', 'WHAT',
+        'WHATS', 'TELL', 'SHOW', 'ME', 'MOST', 'RECENT', 'FILING', 'DATE',
+        'SEC', 'PE', 'EPS', 'EBITDA', 'ROE', 'ROA', 'ROIC', 'NAV', 'FCF',
+        'CAGR', 'YTD', 'TTM', 'USD', 'FY', 'Q1', 'Q2', 'Q3', 'Q4', 'BUY',
+        'SELL', 'HOLD', 'ALL', 'TOP', 'GET', 'CAN', 'HAS', 'HAD', 'NOT',
+        'BUT', 'OUT', 'OUR', 'NEW', 'NEWS', 'NOW', 'WHY', 'DID', 'MOVE',
+        'PRICE', 'STOCK', 'STOCKS', 'VALUE', 'INFO', 'OVERVIEW', 'RATIO',
+        'COMPANY', 'RESEARCH', 'COMPARE', 'VERSUS', 'SIDE', 'BY', 'SIDE',
+        'CURRENT', 'LATEST', 'MARKET', 'DATA', 'DETAILS', 'FINANCIAL',
+        'FINANCIALS', 'METRICS', 'ABOUT', 'LIKE', 'SOME', 'WITH', 'FROM'
+      ]);
+
       for (const raw of tickerMatches) {
         const symbol = raw.replace('$', '');
-        // Exclude common English short uppercase words
-        if (
-          ![
-            'A',
-            'I',
-            'IN',
-            'IS',
-            'IT',
-            'K',
-            'ON',
-            'OR',
-            'Q',
-            'S',
-            'US',
-            'THE',
-            'AND',
-            'FOR',
-            'WHAT',
-            'WHATS',
-            'TELL',
-            'SHOW',
-            'ME',
-            'MOST',
-            'RECENT',
-            'FILING',
-            'DATE',
-            'SEC',
-          ].includes(symbol)
-        ) {
+        const isExplicitDollar = raw.startsWith('$');
+
+        if (isExplicitDollar) {
+          tickers.add(symbol);
+        } else if (symbol.length > 1 && !EXCLUDED_TOKENS.has(symbol)) {
           tickers.add(symbol);
         }
       }

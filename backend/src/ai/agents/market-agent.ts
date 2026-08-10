@@ -153,14 +153,24 @@ export class MarketAgent implements BaseAgent, OnModuleInit {
   }
 
   private extractTargetFromMessage(message: string): string | null {
-    const tickerMatch = message.match(/\b\$?([A-Za-z0-9]{1,15})\b/);
-    if (tickerMatch) {
-      const candidate = tickerMatch[1].trim();
-      const upper = candidate.toUpperCase();
-      if (
-        !['WHAT', 'WHATS', 'TELL', 'SHOW', 'ME', 'IS', 'IT', 'THE', 'AND', 'FOR'].includes(upper)
-      ) {
-        return candidate;
+    const rawMatches = message.match(/(\$[A-Za-z0-9]{1,15}|\b[A-Za-z0-9]{1,15}\b)/g);
+    if (rawMatches) {
+      const EXCLUDED = new Set([
+        'WHAT', 'WHATS', 'TELL', 'SHOW', 'ME', 'IS', 'IT', 'THE', 'AND', 'FOR',
+        'OF', 'IN', 'ON', 'AT', 'TO', 'MY', 'WE', 'YOU', 'HE', 'SHE', 'THEY',
+        'PRICE', 'STOCK', 'STOCKS', 'VALUE', 'INFO', 'OVERVIEW', 'RATIO',
+        'PE', 'EPS', 'EBITDA', 'NEWS', 'LATEST', 'CURRENT', 'MARKET', 'DATA'
+      ]);
+      for (const raw of rawMatches) {
+        const candidate = raw.replace('$', '').trim();
+        const upper = candidate.toUpperCase();
+        const isExplicit = raw.startsWith('$');
+        if (isExplicit) {
+          return candidate;
+        }
+        if (upper.length > 1 && !EXCLUDED.has(upper)) {
+          return candidate;
+        }
       }
     }
 

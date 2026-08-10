@@ -273,11 +273,24 @@ export class ExecutionPipelineService {
       'ExecutionPipelineService',
     );
 
-    // Shortcut: Directly answer simple greetings without invoking LLM to avoid hallucinations
+    // Shortcut: Directly answer simple greetings & /start onboarding trigger without invoking LLM to avoid hallucinations
     if (intent === IntentCategory.GENERAL_CHAT) {
+      const trimmedText = task.message.trim();
+
+      if (trimmedText === '/start' || /^\/start\b/i.test(trimmedText)) {
+        const onboardingWelcome = `Welcome to Atlas AI! I'm your financial intelligence assistant.\n\nTo help tailor market insights to you, what's your background or main area of interest in finance?`;
+        return {
+          agentName: 'ExecutionPipelineService',
+          success: true,
+          output: onboardingWelcome,
+          executionTimeMs: Date.now() - startTime,
+          metadata: { intent: task.intent },
+        };
+      }
+
       const greetingPattern =
         /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|how's it going|what's up|who are you|what can you do|help)\b/i;
-      if (greetingPattern.test(task.message.trim())) {
+      if (greetingPattern.test(trimmedText)) {
         const simpleResponse = `Hello! I'm Atlas AI, your financial intelligence assistant. How can I help you today?`;
         return {
           agentName: 'ExecutionPipelineService',
@@ -335,7 +348,7 @@ export class ExecutionPipelineService {
 
       // Preference signal check to avoid unnecessary LLM calls
       const hasPreferenceSignals =
-        /\b(prefer|invest|portfolio|style|risk|tolerance|follow|like|stocks|sectors|ticker|conservative|aggressive|growth|moderate|tech|technology|healthcare)\b/i.test(
+        /\b(prefer|invest|portfolio|style|risk|tolerance|follow|like|stocks|sectors|ticker|conservative|aggressive|growth|moderate|tech|technology|healthcare|student|interest|interested|semiconductor|semiconductors|updates|news|earnings|events)\b/i.test(
           userMessage,
         );
 

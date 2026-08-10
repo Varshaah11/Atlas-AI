@@ -11,6 +11,7 @@ import {
 import { AppLogger } from '@/common/logger/logger.service';
 import { DocumentIngestionService } from '@/documents/document-ingestion.service';
 import { IUserService, USER_SERVICE_TOKEN } from '@/users/interfaces/user-service.interface';
+import { normalizeTelegramText } from './telegram.utils';
 
 @Injectable()
 export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy {
@@ -133,7 +134,8 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
         messageText,
       });
 
-      await ctx.reply(reply);
+      const formattedReply = normalizeTelegramText(reply);
+      await ctx.reply(formattedReply);
 
     } catch (error: any) {
       this.logger.error(
@@ -281,36 +283,20 @@ export class TelegramService implements OnApplicationBootstrap, OnModuleDestroy 
     }
 
     try {
-      // First attempt sending with Markdown parse_mode
-      await this.bot.telegram.sendMessage(cleanTelegramId, cleanText, {
-        parse_mode: 'Markdown',
-      });
+      const formattedText = normalizeTelegramText(cleanText);
+      await this.bot.telegram.sendMessage(cleanTelegramId, formattedText);
       this.logger.log(
         `Successfully sent Telegram notification to user ${cleanTelegramId}`,
         'TelegramService',
       );
       return true;
     } catch (err: any) {
-      // If Markdown parsing failed due to unescaped special characters in AI text, fallback to plain text delivery
-      this.logger.warn(
-        `Markdown delivery to ${cleanTelegramId} failed (${err.message}). Retrying in plain text...`,
+      this.logger.error(
+        `Failed to send Telegram notification to user ${cleanTelegramId}: ${err.message}`,
+        err.stack,
         'TelegramService',
       );
-      try {
-        await this.bot.telegram.sendMessage(cleanTelegramId, cleanText);
-        this.logger.log(
-          `Successfully sent plain-text Telegram notification to user ${cleanTelegramId}`,
-          'TelegramService',
-        );
-        return true;
-      } catch (fallbackErr: any) {
-        this.logger.error(
-          `Failed to send Telegram notification to user ${cleanTelegramId}: ${fallbackErr.message}`,
-          fallbackErr.stack,
-          'TelegramService',
-        );
-        return false;
-      }
+      return false;
     }
   }
 
