@@ -58,9 +58,60 @@ export default function AlertsPage() {
     }
   }, [showToast]);
 
+  // Telegram Account Connection State
+  const [telegramConnected, setTelegramConnected] = useState<boolean | null>(null);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState<boolean>(false);
+  const [checkingUserStatus, setCheckingUserStatus] = useState<boolean>(true);
+
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      setCheckingUserStatus(true);
+      const res = await fetchApi('/users/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          setTelegramConnected(Boolean(data.user.telegramConnected));
+        }
+      }
+    } catch {
+      // Non-blocking: fail gracefully if /users/me fails
+    } finally {
+      setCheckingUserStatus(false);
+    }
+  }, []);
+
+  const handleConnectTelegram = async () => {
+    try {
+      setGeneratingLink(true);
+      const res = await fetchApi('/users/telegram-link', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to generate Telegram link.');
+      }
+      setLinkUrl(data.linkUrl);
+      showToast('success', 'Telegram link generated! Open Telegram to connect.');
+    } catch (err: any) {
+      showToast('error', err.message || 'Failed to generate Telegram link.');
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
   useEffect(() => {
     fetchAlerts();
-  }, [fetchAlerts]);
+    fetchUserProfile();
+
+    const handleFocus = () => {
+      fetchUserProfile();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [fetchAlerts, fetchUserProfile]);
 
   const handleCreateAlert = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,6 +254,89 @@ export default function AlertsPage() {
           <span className="text-xs font-medium text-slate-300">Alert Engine Active</span>
         </div>
       </div>
+
+      {/* Telegram Connection Status Banner */}
+      {checkingUserStatus ? (
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 backdrop-blur-md flex items-center space-x-3">
+          <span className="h-4 w-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></span>
+          <span className="text-xs text-slate-400">Checking Telegram notification status...</span>
+        </div>
+      ) : telegramConnected === false ? (
+        <div className="bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-slate-900/60 border border-amber-500/30 rounded-xl p-4 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <span className="text-base">📱</span>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                Telegram Not Connected
+              </h2>
+            </div>
+            <p className="text-xs text-slate-300">
+              Connect Telegram to receive instant notifications when your stock alerts are triggered.
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-2 shrink-0">
+            {linkUrl ? (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <a
+                  href={linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-2 px-4 rounded-lg shadow-sm transition flex items-center justify-center space-x-1.5 whitespace-nowrap"
+                >
+                  <span>✈️ Open Telegram to connect</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={fetchUserProfile}
+                  title="Check connection status"
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold py-2 px-3 rounded-lg border border-slate-700 transition flex items-center justify-center space-x-1"
+                >
+                  <span>🔄 Check Status</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleConnectTelegram}
+                disabled={generatingLink}
+                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center justify-center space-x-2 whitespace-nowrap"
+              >
+                {generatingLink ? (
+                  <>
+                    <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
+                    <span>Generating Link...</span>
+                  </>
+                ) : (
+                  <span>Connect Telegram</span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : telegramConnected === true ? (
+        <div className="bg-slate-900/60 border border-emerald-500/30 rounded-xl p-3.5 backdrop-blur-md flex items-center justify-between gap-4">
+          <div className="flex items-center space-x-2.5">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-400"></span>
+            <div>
+              <span className="text-xs font-semibold text-emerald-400">
+                Telegram Connected ✓
+              </span>
+              <span className="text-xs text-slate-400 ml-2 hidden sm:inline">
+                You’ll receive Telegram notifications when your alerts trigger.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fetchUserProfile}
+            title="Refresh status"
+            className="text-[11px] text-slate-400 hover:text-slate-200 transition flex items-center space-x-1"
+          >
+            <span>🔄 Refresh</span>
+          </button>
+        </div>
+      ) : null}
 
       {/* Main Grid: Left Column Create Form, Right Column Alert Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
