@@ -286,7 +286,7 @@ describe('Market Briefings API & Security Suite (Phase 4)', () => {
         data: expect.objectContaining({
           userId: mockUserA.id,
           type: 'BRIEFING',
-          title: 'Atlas AI Market Briefing',
+          title: 'Finora Market Briefing',
         }),
       }),
     );

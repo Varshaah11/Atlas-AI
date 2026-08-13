@@ -299,7 +299,7 @@ describe('DocumentAgent', () => {
 
     const pipelineResult = await executionPipelineService.executePipeline(context);
 
-    expect(pipelineResult.output).toContain("Hello! I'm Atlas AI");
+    expect(pipelineResult.output).toContain("Hello! I'm Finora");
     expect(documentSearchService.search).not.toHaveBeenCalled();
   });
 

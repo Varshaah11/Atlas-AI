@@ -250,7 +250,7 @@ export default function DocumentsPage() {
               </h1>
             </div>
             <p className="text-slate-400 text-sm mt-1">
-              Upload financial documents and ask Atlas AI questions about them.
+              Upload financial documents and ask Finora questions about them.
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -323,7 +323,7 @@ export default function DocumentsPage() {
               </div>
               <h3 className="text-lg font-semibold text-slate-200">No documents uploaded yet</h3>
               <p className="text-sm text-slate-400 max-w-md mx-auto">
-                Upload a financial report, 10-K filing, or PDF document above to enable Atlas AI
+                Upload a financial report, 10-K filing, or PDF document above to enable Finora
                 grounded question answering.
               </p>
             </div>
@@ -411,7 +411,7 @@ export default function DocumentsPage() {
               <div className="flex justify-between items-start border-b border-slate-800 pb-4">
                 <div>
                   <h3 className="text-lg font-bold text-slate-100 flex items-center space-x-2">
-                    <span>Ask Atlas AI</span>
+                    <span>Ask Finora</span>
                     <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-full font-normal">
                       DocumentAgent
                     </span>
@@ -432,7 +432,7 @@ export default function DocumentsPage() {
                 {qaAnswer && (
                   <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
-                      Atlas AI Response
+                      Finora Response
                     </p>
                     <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
                       {qaAnswer}

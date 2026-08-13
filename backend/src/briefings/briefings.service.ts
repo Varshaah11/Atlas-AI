@@ -190,7 +190,7 @@ export class BriefingsService {
       data: {
         userId,
         type: 'BRIEFING',
-        title: 'Atlas AI Market Briefing',
+        title: 'Finora Market Briefing',
         content: briefingText,
         channel: deliveredToTelegram ? 'TELEGRAM' : 'WEB',
         delivered: config.deliverTelegram ? deliveredToTelegram : true,

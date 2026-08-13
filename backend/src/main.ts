@@ -7,7 +7,7 @@ import { AppLogger } from '@/common/logger/logger.service';
 async function bootstrap() {
   const logger = new AppLogger();
 
-  logger.log('Starting Atlas AI backend bootstrap...', 'Bootstrap');
+  logger.log('Starting Finora backend bootstrap...', 'Bootstrap');
 
   const app = await NestFactory.create(AppModule, {
     logger,
@@ -37,7 +37,7 @@ async function bootstrap() {
 
     logger.log(`app.listen() completed successfully.`, 'Bootstrap');
 
-    logger.log(`Atlas AI Backend Engine running on port ${port}`, 'Bootstrap');
+    logger.log(`Finora Backend Engine running on port ${port}`, 'Bootstrap');
 
     logger.log(`Health endpoint: http://localhost:${port}/health`, 'Bootstrap');
   } catch (error: any) {

@@ -54,13 +54,13 @@ function getServiceErrorMessage(candidate: string): string | null {
     return 'SEC filing data is temporarily unavailable. Please try again shortly.';
   }
   if (lower.includes('groq') || lower.includes('llama') || lower.includes('llm engine')) {
-    return 'Atlas AI is temporarily unable to generate a response. Please try again shortly.';
+    return 'Finora is temporarily unable to generate a response. Please try again shortly.';
   }
   if (lower.includes('telegram') || lower.includes('bot api')) {
-    return 'Telegram delivery is currently unavailable. Your Atlas AI data is still available here.';
+    return 'Telegram delivery is currently unavailable. Your Finora data is still available here.';
   }
   if (lower.includes('prisma') || lower.includes('postgres') || lower.includes('database')) {
-    return 'Atlas AI is having trouble reaching its data store. Please try again shortly.';
+    return 'Finora is having trouble reaching its data store. Please try again shortly.';
   }
   return null;
 }
@@ -107,7 +107,7 @@ export function extractApiErrorMessage(payload: unknown, status?: number): strin
       return 'Too many requests. Please wait a moment and try again.';
     default:
       if (status && status >= 500) {
-        return 'Atlas AI is temporarily unavailable. Please try again later.';
+        return 'Finora is temporarily unavailable. Please try again later.';
       }
       return 'An unexpected error occurred. Please try again.';
   }
@@ -173,7 +173,7 @@ export async function fetchApi(
       );
     }
     throw new ApiError(
-      'Unable to reach Atlas AI. Please check your connection and try again.',
+      'Unable to reach Finora. Please check your connection and try again.',
       0,
       'NETWORK_ERROR',
     );

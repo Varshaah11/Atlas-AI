@@ -1,6 +1,6 @@
-# Atlas AI - Proactive Financial Intelligence Platform
+# Finora - Proactive Financial Intelligence Platform
 
-Atlas AI is an executive-grade AI Financial Assistant & Proactive Intelligence Platform living inside Telegram and the Web, designed to operate with the analytical rigor of a senior equity research analyst.
+Finora is an executive-grade AI Financial Assistant & Proactive Intelligence Platform living inside Telegram and the Web, designed to operate with the analytical rigor of a senior equity research analyst.
 
 ## 🚀 Key Features
 
@@ -90,7 +90,7 @@ npm run dev:frontend   # Starts Next.js dashboard
 ```json
 {
   "success": true,
-  "message": "Atlas AI health check completed successfully.",
+  "message": "Finora health check completed successfully.",
   "data": {
     "status": "ok",
     "version": "1.0.0",

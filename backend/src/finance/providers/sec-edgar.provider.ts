@@ -33,7 +33,7 @@ export class SecEdgarProvider implements ISecEdgarProvider {
     private readonly logger: AppLogger,
   ) {
     this.userAgent =
-      this.configService.get<string>('SEC_USER_AGENT') || 'AtlasAI ResearchBot admin@atlasai.com';
+      this.configService.get<string>('SEC_USER_AGENT') || 'Finora ResearchBot admin@finora.com';
     this.logger.log(
       `SecEdgarProvider initialized with User-Agent: "${this.userAgent}"`,
       'SecEdgarProvider',

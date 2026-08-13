@@ -80,7 +80,7 @@ export class HealthController {
     return createApiResponse(
       isSystemOk,
       isSystemOk
-        ? 'Atlas AI health check completed successfully.'
+        ? 'Finora health check completed successfully.'
         : 'System health check completed with service warnings.',
       healthData,
     );

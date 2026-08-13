@@ -278,7 +278,7 @@ export class ExecutionPipelineService {
       const trimmedText = task.message.trim();
 
       if (trimmedText === '/start' || /^\/start\b/i.test(trimmedText)) {
-        const onboardingWelcome = `Welcome to Atlas AI! I'm your financial intelligence assistant.\n\nTo help tailor market insights to you, what's your background or main area of interest in finance?`;
+        const onboardingWelcome = `Welcome to Finora! I'm your financial intelligence assistant.\n\nTo help tailor market insights to you, what's your background or main area of interest in finance?`;
         return {
           agentName: 'ExecutionPipelineService',
           success: true,
@@ -291,7 +291,7 @@ export class ExecutionPipelineService {
       const greetingPattern =
         /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|how's it going|what's up|who are you|what can you do|help)\b/i;
       if (greetingPattern.test(trimmedText)) {
-        const simpleResponse = `Hello! I'm Atlas AI, your financial intelligence assistant. How can I help you today?`;
+        const simpleResponse = `Hello! I'm Finora, your financial intelligence assistant. How can I help you today?`;
         return {
           agentName: 'ExecutionPipelineService',
           success: true,

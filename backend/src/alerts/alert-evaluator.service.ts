@@ -123,12 +123,12 @@ export class AlertEvaluatorService {
     if (alert.alertType === AlertType.PRICE_ABOVE && quote && alert.targetValue !== null) {
       if (quote.currentPrice >= alert.targetValue) {
         triggered = true;
-        messageText = `🔔 *Atlas AI Stock Alert*\n\n*${alert.symbol}* crossed above your target price of *$${alert.targetValue.toFixed(2)}*.\n\n*Current Price:* $${quote.currentPrice.toFixed(2)}`;
+        messageText = `🔔 *Finora Stock Alert*\n\n*${alert.symbol}* crossed above your target price of *$${alert.targetValue.toFixed(2)}*.\n\n*Current Price:* $${quote.currentPrice.toFixed(2)}`;
       }
     } else if (alert.alertType === AlertType.PRICE_BELOW && quote && alert.targetValue !== null) {
       if (quote.currentPrice <= alert.targetValue) {
         triggered = true;
-        messageText = `🔔 *Atlas AI Stock Alert*\n\n*${alert.symbol}* dropped below your target price of *$${alert.targetValue.toFixed(2)}*.\n\n*Current Price:* $${quote.currentPrice.toFixed(2)}`;
+        messageText = `🔔 *Finora Stock Alert*\n\n*${alert.symbol}* dropped below your target price of *$${alert.targetValue.toFixed(2)}*.\n\n*Current Price:* $${quote.currentPrice.toFixed(2)}`;
       }
     } else if (
       alert.alertType === AlertType.PERCENT_CHANGE_DAILY &&
@@ -139,7 +139,7 @@ export class AlertEvaluatorService {
       if (Math.abs(changePct) >= alert.targetValue) {
         triggered = true;
         const direction = changePct >= 0 ? 'up' : 'down';
-        messageText = `📈 *Atlas AI Market Movement Alert*\n\n*${alert.symbol}* moved *${changePct.toFixed(2)}% ${direction}* today (Threshold: ${alert.targetValue}%).\n\n*Current Price:* $${quote.currentPrice.toFixed(2)}`;
+        messageText = `📈 *Finora Market Movement Alert*\n\n*${alert.symbol}* moved *${changePct.toFixed(2)}% ${direction}* today (Threshold: ${alert.targetValue}%).\n\n*Current Price:* $${quote.currentPrice.toFixed(2)}`;
       }
     } else if (alert.alertType === AlertType.NEW_SEC_FILING && secFilings && alert.secFormType) {
       const filingsList = secFilings.recentFilings || [];
@@ -156,7 +156,7 @@ export class AlertEvaluatorService {
         // Check if filing is genuinely newer than lastTriggeredAt timestamp
         if (filingDate.getTime() > lastTriggered.getTime()) {
           triggered = true;
-          messageText = `📄 *Atlas AI SEC Filing Alert*\n\n*${alert.symbol}* filed a new *${alert.secFormType}*.\n\n*Filed Date:* ${matchingFiling.filingDate || 'Recently'}`;
+          messageText = `📄 *Finora SEC Filing Alert*\n\n*${alert.symbol}* filed a new *${alert.secFormType}*.\n\n*Filed Date:* ${matchingFiling.filingDate || 'Recently'}`;
         }
       }
     }
@@ -187,7 +187,7 @@ export class AlertEvaluatorService {
       data: {
         userId: alert.userId,
         type: 'ALERT',
-        title: `Atlas AI Alert: ${alert.symbol}`,
+        title: `Finora Alert: ${alert.symbol}`,
         content: messageText,
         channel: delivered ? 'TELEGRAM' : 'WEB',
         delivered,

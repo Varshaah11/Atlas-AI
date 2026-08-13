@@ -28,7 +28,7 @@ export default function SessionExpired({ onRetry, isModal = true }: SessionExpir
           Session Expired
         </h2>
         <p className="text-xs text-slate-400 leading-relaxed">
-          Your session has expired. Please sign in again to continue using Atlas AI.
+          Your session has expired. Please sign in again to continue using Finora.
         </p>
       </div>
 

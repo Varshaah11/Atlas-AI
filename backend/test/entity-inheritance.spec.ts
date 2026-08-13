@@ -406,7 +406,7 @@ describe('Conversational Entity Inheritance Suite', () => {
   it('AI Token Test 1 — /start followed by "What about its P/E?" does NOT resolve "AI" and requests clarification', async () => {
     const history: ChatMessageContext[] = [
       { role: 'user', content: '/start' },
-      { role: 'assistant', content: 'Welcome to Atlas AI! I am your AI financial assistant.' },
+      { role: 'assistant', content: 'Welcome to Finora! I am your AI financial assistant.' },
     ];
 
     const task = await conversationAgent.processMessageToTask(
@@ -464,7 +464,7 @@ describe('Conversational Entity Inheritance Suite', () => {
       { role: 'user', content: 'What about its P/E?' },
       { role: 'assistant', content: 'NVDA P/E is 45.2' },
       { role: 'user', content: '/start' },
-      { role: 'assistant', content: 'Welcome to Atlas AI! I am your financial assistant.' },
+      { role: 'assistant', content: 'Welcome to Finora! I am your financial assistant.' },
     ];
 
     const task = await conversationAgent.processMessageToTask(
@@ -484,7 +484,7 @@ describe('Conversational Entity Inheritance Suite', () => {
       { role: 'user', content: 'What is the price of AMD?' },
       { role: 'assistant', content: 'AMD — Market Snapshot: $150.00' },
       { role: 'user', content: '/start' },
-      { role: 'assistant', content: 'Welcome to Atlas AI!' },
+      { role: 'assistant', content: 'Welcome to Finora!' },
     ];
 
     const task = await conversationAgent.processMessageToTask(
@@ -501,7 +501,7 @@ describe('Conversational Entity Inheritance Suite', () => {
   it('Start Boundary Test 3 — /start -> explicit NVDA query -> "Why did it move?" STILL inherits NVDA normally', async () => {
     const history: ChatMessageContext[] = [
       { role: 'user', content: '/start' },
-      { role: 'assistant', content: 'Welcome to Atlas AI!' },
+      { role: 'assistant', content: 'Welcome to Finora!' },
       { role: 'user', content: 'What is the current price of NVDA?' },
       { role: 'assistant', content: 'NVDA — Market Snapshot: $120.50' },
     ];
@@ -520,7 +520,7 @@ describe('Conversational Entity Inheritance Suite', () => {
   it('Start Boundary Test 4 — /start -> "hi" -> "What about its P/E?" does NOT inherit any ticker', async () => {
     const history: ChatMessageContext[] = [
       { role: 'user', content: '/start' },
-      { role: 'assistant', content: 'Welcome to Atlas AI!' },
+      { role: 'assistant', content: 'Welcome to Finora!' },
       { role: 'user', content: 'hi' },
       { role: 'assistant', content: 'Hello! How can I help you?' },
     ];

@@ -4,8 +4,9 @@ import { SessionProvider } from '@/components/auth/session-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Atlas AI - Financial Intelligence Assistant',
-  description: 'AI-powered Financial Assistant living inside Telegram and Web Dashboard.',
+  title: 'Finora - AI-Powered Financial Intelligence',
+  description:
+    'AI-powered Financial Assistant living inside Telegram and Web Dashboard.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

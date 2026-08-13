@@ -71,7 +71,7 @@ export class UserService implements IUserService {
       },
     });
 
-    const botUsername = this.configService?.get<string>('TELEGRAM_BOT_USERNAME') || 'AtlasAIBot';
+    const botUsername = this.configService?.get<string>('TELEGRAM_BOT_USERNAME') || 'FinoraBot';
     const linkUrl = `https://t.me/${botUsername}?start=link_${rawToken}`;
 
     return { linkUrl, expiresAt };
@@ -85,7 +85,7 @@ export class UserService implements IUserService {
       return {
         success: false,
         message:
-          '❌ This linking link is invalid or has expired. Please generate a new link from your Atlas AI dashboard.',
+          '❌ This linking link is invalid or has expired. Please generate a new link from your Finora dashboard.',
       };
     }
 
@@ -108,7 +108,7 @@ export class UserService implements IUserService {
         return {
           success: false,
           message:
-            '❌ This linking link is invalid or has expired. Please generate a new link from your Atlas AI dashboard.',
+            '❌ This linking link is invalid or has expired. Please generate a new link from your Finora dashboard.',
         };
       }
 
@@ -122,7 +122,7 @@ export class UserService implements IUserService {
       if (existingTelegramUser) {
         return {
           success: false,
-          message: '❌ This Telegram account is already linked to another Atlas AI account.',
+          message: '❌ This Telegram account is already linked to another Finora account.',
         };
       }
 
@@ -144,7 +144,7 @@ export class UserService implements IUserService {
       return {
         success: true,
         message:
-          '✅ Your Telegram account has been linked to your Atlas AI Web Dashboard. You can now receive alerts and market briefings here.',
+          '✅ Your Telegram account has been linked to your Finora Web Dashboard. You can now receive alerts and market briefings here.',
       };
     });
   }

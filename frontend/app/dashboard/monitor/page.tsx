@@ -39,7 +39,7 @@ export default function SystemMonitorPage() {
       setHealth(payload.data);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Unable to connect to Atlas AI Backend Engine');
+      setError(err.message || 'Unable to connect to Finora Backend Engine');
     } finally {
       setLoading(false);
     }

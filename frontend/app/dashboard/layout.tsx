@@ -37,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center space-x-3">
               <span className="h-3 w-3 rounded-full bg-blue-500 animate-pulse"></span>
               <Link href="/dashboard" className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300 bg-clip-text text-transparent">
-                Atlas AI Dashboard
+                Finora Dashboard
               </Link>
             </div>
 

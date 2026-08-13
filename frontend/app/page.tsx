@@ -27,7 +27,7 @@ export default function LandingPage() {
             <div className="flex items-center space-x-3">
               <span className="h-3 w-3 rounded-full bg-blue-500 animate-pulse"></span>
               <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300 bg-clip-text text-transparent">
-                Atlas AI
+                Finora
               </span>
               <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 Financial Research
@@ -63,7 +63,7 @@ export default function LandingPage() {
             <div className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Atlas AI Financial Platform</span>
+                <span>Finora Financial Platform</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-slate-100">
@@ -99,7 +99,7 @@ export default function LandingPage() {
                     <div className="h-2.5 w-2.5 rounded-full bg-red-500/80"></div>
                     <div className="h-2.5 w-2.5 rounded-full bg-amber-500/80"></div>
                     <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/80"></div>
-                    <span className="text-xs font-semibold text-slate-400 ml-2">Atlas AI Intelligence Workspace</span>
+                    <span className="text-xs font-semibold text-slate-400 ml-2">Finora Intelligence Workspace</span>
                   </div>
                   <span className="text-[10px] text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                     Live Context
@@ -128,7 +128,7 @@ export default function LandingPage() {
                 <div className="bg-blue-950/20 border border-blue-500/20 rounded-xl p-3.5 space-y-2">
                   <div className="flex items-center space-x-2 text-xs font-semibold text-blue-400">
                     <Bot className="h-4 w-4" />
-                    <span>Atlas Financial Assistant</span>
+                    <span>Finora Financial Assistant</span>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed">
                     Q2 revenue grew 14% YoY driven by cloud segments. Operating margin remains strong at 44.2%.
@@ -245,7 +245,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
-              How Atlas AI Works
+              How Finora Works
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">
               Simple 3-step financial intelligence flow.
@@ -271,7 +271,7 @@ export default function LandingPage() {
               </span>
               <h3 className="text-base font-bold text-slate-100 pt-2">Synthesize Insights</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Atlas AI combines financial data, SEC filings, market context, and AI reasoning.
+                Finora combines financial data, SEC filings, market context, and AI reasoning.
               </p>
             </div>
 
@@ -297,14 +297,14 @@ export default function LandingPage() {
               One workspace. Complete market intelligence.
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-              Atlas AI brings real-time market overview, AI conversations, SEC filings, side-by-side stock comparisons, PDF document intelligence, real-time alerts, scheduled briefings, and infrastructure monitoring into a single unified workspace.
+              Finora brings real-time market overview, AI conversations, SEC filings, side-by-side stock comparisons, PDF document intelligence, real-time alerts, scheduled briefings, and infrastructure monitoring into a single unified workspace.
             </p>
             <div className="pt-4">
               <Link
                 href="/dashboard"
                 className="inline-flex items-center space-x-2 px-6 py-3 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition duration-200 shadow-xl shadow-blue-600/25"
               >
-                <span>Enter Atlas AI</span>
+                <span>Enter Finora</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -316,7 +316,7 @@ export default function LandingPage() {
       <section className="py-16 md:py-24 border-b border-slate-900 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100 max-w-2xl mx-auto">
-            Build your financial intelligence workflow with Atlas AI.
+            Build your financial intelligence workflow with Finora.
           </h2>
           <p className="text-slate-400 text-sm">
             Research faster. Understand more. Stay informed.
@@ -338,7 +338,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="space-y-1 text-center md:text-left">
-              <span className="text-sm font-bold text-slate-200">Atlas AI</span>
+              <span className="text-sm font-bold text-slate-200">Finora</span>
               <p className="text-slate-500">AI-powered financial intelligence.</p>
             </div>
 
@@ -372,7 +372,7 @@ export default function LandingPage() {
           </div>
 
           <div className="text-center pt-4 border-t border-slate-900/60 text-[11px] text-slate-600">
-            © 2026 Atlas AI. All rights reserved.
+            © 2026 Finora. All rights reserved.
           </div>
         </div>
       </footer>

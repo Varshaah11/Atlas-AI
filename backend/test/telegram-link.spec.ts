@@ -199,7 +199,7 @@ describe('Telegram Account Linking & Security Suite (Sprint 8)', () => {
 
     const consumeRes = await userService.consumeTelegramLinkToken(rawToken, '987654321');
     expect(consumeRes.success).toBe(false);
-    expect(consumeRes.message).toContain('already linked to another Atlas AI account');
+    expect(consumeRes.message).toContain('already linked to another Finora account');
 
     const webUser = usersDb.find((u) => u.id === mockWebUser.id);
     expect(webUser.telegramChatId).toBeUndefined();

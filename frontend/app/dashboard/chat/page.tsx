@@ -29,7 +29,7 @@ const getCurrentTime = () =>
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'welcome-1',
   sender: 'assistant',
-  text: "Hello! I'm Atlas AI, your financial assistant. Ask me anything about stock prices, company research, SEC filings, document intelligence, or financial comparisons.",
+  text: "Hello! I'm Finora, your financial assistant. Ask me anything about stock prices, company research, SEC filings, document intelligence, or financial comparisons.",
   timestamp: '',
 };
 
@@ -59,8 +59,12 @@ export default function FinancialChatPage() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const restored = parsed.map((msg: ChatMessage) =>
-            msg.id === 'welcome-1' && !msg.timestamp
-              ? { ...msg, timestamp: getCurrentTime() }
+            msg.id === 'welcome-1'
+              ? {
+                  ...msg,
+                  text: WELCOME_MESSAGE.text,
+                  timestamp: msg.timestamp || getCurrentTime(),
+                }
               : msg
           );
           setMessages(restored);
@@ -129,7 +133,7 @@ export default function FinancialChatPage() {
 
       if (!res.ok) {
         throw new Error(
-          `HTTP ${res.status}: Failed to reach Atlas AI chat gateway`,
+          `HTTP ${res.status}: Failed to reach Finora chat gateway`,
         );
       }
 
@@ -214,7 +218,7 @@ export default function FinancialChatPage() {
               {/* Message Header */}
               <div className="flex items-center justify-between text-[10px] opacity-75 mb-2 space-x-4">
                 <span className="font-semibold">
-                  {msg.sender === 'user' ? 'You' : 'Atlas AI'}
+                  {msg.sender === 'user' ? 'You' : 'Finora'}
                 </span>
 
                 <span>{msg.timestamp}</span>
@@ -301,7 +305,7 @@ export default function FinancialChatPage() {
               <span className="h-2 w-2 rounded-full bg-blue-400 animate-ping" />
 
               <span>
-                Atlas AI is evaluating query & retrieving market context...
+                Finora is evaluating query & retrieving market context...
               </span>
             </div>
           </div>
@@ -329,7 +333,7 @@ export default function FinancialChatPage() {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Ask Atlas AI about stocks, financials, SEC filings, or uploaded documents..."
+          placeholder="Ask Finora about stocks, financials, SEC filings, or uploaded documents..."
           disabled={loading}
           className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
         />
