@@ -20,20 +20,22 @@ const QUICK_PROMPTS = [
 ];
 
 const getCurrentTime = () =>
-  new Date().toLocaleTimeString([], {
+  new Date().toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: true,
   });
 
+const WELCOME_MESSAGE: ChatMessage = {
+  id: 'welcome-1',
+  sender: 'assistant',
+  text: "Hello! I'm Atlas AI, your financial assistant. Ask me anything about stock prices, company research, SEC filings, document intelligence, or financial comparisons.",
+  timestamp: '',
+};
+
 export default function FinancialChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-1',
-      sender: 'assistant',
-      text: "Hello! I'm Atlas AI, your financial assistant. Ask me anything about stock prices, company research, SEC filings, document intelligence, or financial comparisons.",
-      timestamp: getCurrentTime(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,52 @@ export default function FinancialChatPage() {
       behavior: 'smooth',
     });
   };
+
+  // Restore messages from sessionStorage on client mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const saved = sessionStorage.getItem('atlas-ai-chat-messages');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const restored = parsed.map((msg: ChatMessage) =>
+            msg.id === 'welcome-1' && !msg.timestamp
+              ? { ...msg, timestamp: getCurrentTime() }
+              : msg
+          );
+          setMessages(restored);
+          setIsInitialized(true);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to restore chat messages from sessionStorage:', err);
+    }
+
+    setMessages([
+      {
+        ...WELCOME_MESSAGE,
+        timestamp: getCurrentTime(),
+      },
+    ]);
+    setIsInitialized(true);
+  }, []);
+
+  // Save messages to sessionStorage whenever messages change AFTER initialization
+  useEffect(() => {
+    if (!isInitialized || typeof window === 'undefined') return;
+
+    try {
+      sessionStorage.setItem(
+        'atlas-ai-chat-messages',
+        JSON.stringify(messages),
+      );
+    } catch (err) {
+      console.error('Failed to save chat messages to sessionStorage:', err);
+    }
+  }, [messages, isInitialized]);
 
   useEffect(() => {
     scrollToBottom();

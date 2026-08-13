@@ -535,4 +535,69 @@ describe('Conversational Entity Inheritance Suite', () => {
     expect(task.entities.tickers).toEqual([]);
     expect(task.needsClarification).toBe(true);
   });
+
+  describe('Explicit Ticker & Market Movement Analysis Routing Suite', () => {
+    it('1. "Why did NVDA move?" classifies as FINANCIAL_NEWS, extracts NVDA, and requires no clarification', async () => {
+      const task = await conversationAgent.processMessageToTask(
+        { messageText: 'Why did NVDA move?', userData: mockUserData },
+        'conv-1',
+        'user-1',
+      );
+
+      expect(task.intent).toBe(IntentCategory.FINANCIAL_NEWS);
+      expect(task.entities.tickers).toEqual(['NVDA']);
+      expect(task.needsClarification).toBeFalsy();
+    });
+
+    it('2. "Why is NVDA down?" classifies as FINANCIAL_NEWS, extracts NVDA, and requires no clarification', async () => {
+      const task = await conversationAgent.processMessageToTask(
+        { messageText: 'Why is NVDA down?', userData: mockUserData },
+        'conv-1',
+        'user-1',
+      );
+
+      expect(task.intent).toBe(IntentCategory.FINANCIAL_NEWS);
+      expect(task.entities.tickers).toEqual(['NVDA']);
+      expect(task.needsClarification).toBeFalsy();
+    });
+
+    it('3. "Why is AMD up?" classifies as FINANCIAL_NEWS, extracts AMD, and requires no clarification', async () => {
+      const task = await conversationAgent.processMessageToTask(
+        { messageText: 'Why is AMD up?', userData: mockUserData },
+        'conv-1',
+        'user-1',
+      );
+
+      expect(task.intent).toBe(IntentCategory.FINANCIAL_NEWS);
+      expect(task.entities.tickers).toEqual(['AMD']);
+      expect(task.needsClarification).toBeFalsy();
+    });
+
+    it('4. "What caused AAPL to move?" classifies as FINANCIAL_NEWS, extracts AAPL, and requires no clarification', async () => {
+      const task = await conversationAgent.processMessageToTask(
+        { messageText: 'What caused AAPL to move?', userData: mockUserData },
+        'conv-1',
+        'user-1',
+      );
+
+      expect(task.intent).toBe(IntentCategory.FINANCIAL_NEWS);
+      expect(task.entities.tickers).toEqual(['AAPL']);
+      expect(task.needsClarification).toBeFalsy();
+    });
+
+    it('5. Ensures explicit tickers are preserved and route to MarketAgent for movement queries', async () => {
+      const task = await conversationAgent.processMessageToTask(
+        { messageText: 'Why did NVDA move?', userData: mockUserData },
+        'conv-1',
+        'user-1',
+      );
+
+      const agentRegistry = new AgentRegistryService({ log: jest.fn(), warn: jest.fn() } as any);
+      const mockFinanceService = {} as any;
+      const { MarketAgent } = await import('../src/ai/agents/market-agent');
+      const marketAgent = new MarketAgent(mockFinanceService, agentRegistry, { log: jest.fn(), warn: jest.fn() } as any);
+
+      expect(marketAgent.canHandle(task)).toBe(true);
+    });
+  });
 });

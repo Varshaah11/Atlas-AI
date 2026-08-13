@@ -65,6 +65,12 @@ export class ConversationAgentService implements BaseAgent, OnModuleInit {
       );
 
     const isFinancialFollowUp =
+      /\bwhy (did|has|is|was)\b.+(move|moving|moved|movement|fall|fallen|falling|drop|dropped|dropping|rise|risen|rising|gain|gained|gaining|plummet|plummeted|soar|soared|soaring|dip|dipped|dipping|crash|crashed|crashing|down|up|high|low)\b/i.test(
+        messageText,
+      ) ||
+      /\bwhat (caused|drove|led to)\b.+(move|moving|moved|movement|drop|dropped|fall|fallen|rise|risen|surge|surged|dip|dipped|plummet|crash|soar)\b/i.test(
+        messageText,
+      ) ||
       /\b(why did (it|the stock|the price|that)|what caused (that|it|the move|the drop|the rise|the fall)|why (did|has|is) (it|the price|the stock) (move|moving|moved|fall|fallen|drop|dropped|rise|risen|gain|gained|plummet|soar|dip|dipped|crash|down|up|high|low)|what about (its|the) (p\/e|pe|valuation|price|revenue|earnings|metrics|market cap|stock)|why is (its|the) (valuation|price|pe|p\/e|market cap) (high|low)|is (it|the stock) (a good buy|overvalued|undervalued)|how did (it|the stock) perform|what happened to (it|the stock))\b/i.test(
         messageText,
       ) ||

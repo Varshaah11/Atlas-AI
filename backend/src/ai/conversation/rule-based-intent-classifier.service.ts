@@ -35,12 +35,18 @@ export class RuleBasedIntentClassifier implements IIntentClassifier {
       };
     }
 
-    // 3. Financial News & Market Movement: What is the latest news about NVIDIA? / Why did it move?
+    // 3. Financial News & Market Movement: What is the latest news about NVIDIA? / Why did NVDA move?
     if (
       /\b(news|latest news|headline|headlines|article|articles|press release|market news|company news)\b/i.test(
         text,
       ) ||
-      /\b(why did (it|the stock|the price|that)|what caused (that|it|the move|the drop|the rise|the fall)|why (did|has) (it|the price|the stock) (move|moving|moved|fall|fallen|drop|dropped|rise|risen|gain|gained|plummet|soar|dip|dipped|crash))\b/i.test(
+      /\bwhy (did|has|is|was)\b.+(move|moving|moved|movement|fall|fallen|falling|drop|dropped|dropping|rise|risen|rising|gain|gained|gaining|plummet|plummeted|soar|soared|soaring|dip|dipped|dipping|crash|crashed|crashing|down|up)\b/i.test(
+        text,
+      ) ||
+      /\bwhat (caused|drove|led to)\b.+(move|moving|moved|movement|drop|dropped|fall|fallen|rise|risen|surge|surged|dip|dipped|plummet|crash|soar)\b/i.test(
+        text,
+      ) ||
+      /\b(reason|cause|catalyst)\s+(for|behind)\b.+(move|movement|drop|fall|rise|surge|dip|plummet|crash)\b/i.test(
         text,
       )
     ) {
